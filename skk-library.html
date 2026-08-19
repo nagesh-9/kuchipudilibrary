@@ -828,6 +828,8 @@
       holder.appendChild(buildRegisterView());
     } else {
       holder.appendChild(buildCatalogView());
+      renderStatsBarOnly();
+      renderDeletedCountOnly();
       renderTableOnly();
     }
   }
@@ -853,20 +855,34 @@
     const toolActions = el('div', {class:'toolbar-actions'});
     toolActions.appendChild(el('button', {class:'btn-outline btn-small', onclick:function(){ window.print(); }}, ['Print catalog']));
     if(currentRole==='admin'){
-      const deletedCount = books.filter(function(b){ return b.deleted; }).length;
-      if(deletedCount>0){
-        toolActions.appendChild(el('button', {class:'btn-outline btn-small', onclick:function(){ deletedModalOpen=true; renderApp(); }}, ['Deleted books ('+deletedCount+')']));
-      }
+      toolActions.appendChild(el('span', {id:'deleted-count-holder'}));
       toolActions.appendChild(el('button', {class:'btn-outline btn-small', onclick:function(){ importModalOpen=true; renderApp(); }}, ['Import spreadsheet']));
       toolActions.appendChild(el('button', {class:'btn-primary', onclick:function(){ editBookId=null; addBookModalOpen=true; renderApp(); }}, ['+ Add book']));
     }
     toolbar.appendChild(toolActions);
     container.appendChild(toolbar);
 
-    if(!catalogLoading) container.appendChild(buildStatsBar());
+    if(!catalogLoading) container.appendChild(el('div', {id:'stats-bar-holder'}));
 
     container.appendChild(el('div', {id:'table-holder'}));
     return container;
+  }
+
+  function renderStatsBarOnly(){
+    const holder = document.getElementById('stats-bar-holder');
+    if(!holder) return;
+    holder.innerHTML='';
+    if(!catalogLoading) holder.appendChild(buildStatsBar());
+  }
+
+  function renderDeletedCountOnly(){
+    const holder = document.getElementById('deleted-count-holder');
+    if(!holder) return;
+    holder.innerHTML='';
+    const deletedCount = books.filter(function(b){ return b.deleted; }).length;
+    if(deletedCount>0){
+      holder.appendChild(el('button', {class:'btn-outline btn-small', onclick:function(){ deletedModalOpen=true; renderApp(); }}, ['Deleted books ('+deletedCount+')']));
+    }
   }
 
   function buildStatsBar(){
@@ -1904,7 +1920,7 @@
     unsubscribeBooks = db.collection('books').onSnapshot(function(snap){
       books = snap.docs.map(function(d){ return withRoman(Object.assign({id:d.id}, d.data())); });
       netStatus = (snap.metadata.fromCache && !navigator.onLine) ? 'offline' : (navigator.onLine ? 'online' : 'offline');
-      if(document.getElementById('table-holder')){ renderTableOnly(); renderStatusOnly(); }
+      if(document.getElementById('table-holder')){ renderTableOnly(); renderStatusOnly(); renderStatsBarOnly(); renderDeletedCountOnly(); }
     }, function(err){
       console.error('books snapshot error', err);
       showToast('Lost the connection to the catalog — it will retry automatically.', true);
