@@ -13,13 +13,19 @@ this server. This file's job is just: hand out the HTML, and answer
 /api/books from an always-fresh in-memory copy kept live by a Firestore
 watch (not polling). Nothing is written to a visitor's device — no
 localStorage, no cookies.
+
+Firebase/Firestore initialization is deliberately LAZY — it happens on
+the first incoming request, not at module-import time. gRPC (which the
+Firestore Admin SDK uses under the hood) is not fork-safe: if a listener
+is created before gunicorn forks its worker process, the forked worker
+ends up with a broken connection and silently serves no data. Lazy
+initialization guarantees everything Firebase-related is created fresh,
+after the fork, inside the actual running worker.
 """
 import json
 import os
 import threading
 
-import firebase_admin
-from firebase_admin import credentials, firestore
 from flask import Flask, Response, request, send_from_directory
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -37,35 +43,42 @@ PUBLIC_FIELDS = [
 # controls how quickly *visitors* see a change without a fresh request.
 CACHE_MAX_AGE_SECONDS = 60
 
-
-def _init_firebase():
-    """
-    Requires a Firebase service account key, provided via the
-    FIREBASE_SERVICE_ACCOUNT_JSON environment variable (the full JSON
-    content as a single string) — see the deployment notes for how to
-    get one. Never commit that JSON to a public repo.
-    """
-    raw = os.environ.get("FIREBASE_SERVICE_ACCOUNT_JSON")
-    if not raw:
-        raise RuntimeError(
-            "FIREBASE_SERVICE_ACCOUNT_JSON environment variable is not set. "
-            "This must contain the full service account key JSON as a string."
-        )
-    cred = credentials.Certificate(json.loads(raw))
-    firebase_admin.initialize_app(cred)
-    return firestore.client()
-
-
-db = _init_firebase()
-
 _lock = threading.Lock()
 _books_cache = []
 _version = "0"
+_initialized = False
+_init_lock = threading.Lock()
+
+
+def _ensure_initialized():
+    """Runs exactly once per worker process, triggered by the first real
+    request that reaches it — never at import time, never before a fork."""
+    global _initialized
+    if _initialized:
+        return
+    with _init_lock:
+        if _initialized:  # re-check inside the lock (another thread may have just finished)
+            return
+        import firebase_admin
+        from firebase_admin import credentials, firestore
+
+        raw = os.environ.get("FIREBASE_SERVICE_ACCOUNT_JSON")
+        if not raw:
+            raise RuntimeError(
+                "FIREBASE_SERVICE_ACCOUNT_JSON environment variable is not set. "
+                "This must contain the full service account key JSON as a string."
+            )
+        cred = credentials.Certificate(json.loads(raw))
+        firebase_admin.initialize_app(cred)
+        db = firestore.client()
+        db.collection("books").on_snapshot(_rebuild_cache)
+        _initialized = True
+        print("[catalog] Firestore listener started (post-fork, lazy init)")
 
 
 def _rebuild_cache(col_snapshot, changes, read_time):
     """Called by the Firestore SDK on every change to the books collection —
-    including once immediately on startup with the full current collection."""
+    including once immediately on attach, with the full current collection."""
     global _books_cache, _version
     docs = []
     for doc in col_snapshot:
@@ -82,10 +95,6 @@ def _rebuild_cache(col_snapshot, changes, read_time):
     print(f"[catalog] cache updated: {len(docs)} books, version {_version}")
 
 
-# Live watch — stays open for the life of the process; the SDK handles
-# reconnects internally if the stream drops.
-_watch = db.collection("books").on_snapshot(_rebuild_cache)
-
 app = Flask(__name__)
 
 
@@ -96,6 +105,7 @@ def index():
 
 @app.route("/api/books")
 def api_books():
+    _ensure_initialized()
     with _lock:
         books = _books_cache
         etag = _version
@@ -115,9 +125,10 @@ def api_books():
 
 @app.route("/healthz")
 def healthz():
+    _ensure_initialized()
     with _lock:
         count = len(_books_cache)
-    return {"status": "ok", "books_cached": count}, 200
+    return {"status": "ok", "books_cached": count, "initialized": _initialized}, 200
 
 
 if __name__ == "__main__":
