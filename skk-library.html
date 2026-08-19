@@ -1,0 +1,1972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Siddhendra Kala Kshetram — Library</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Tiro+Telugu:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root{
+    --parchment:#F3ECD9;
+    --card:#FBF7EC;
+    --ink:#2B2118;
+    --ink-soft:#5A4E3E;
+    --maroon:#7A2E2E;
+    --maroon-dark:#5C2020;
+    --gold:#B08D3F;
+    --teal:#2F4B3C;
+    --line:#DED2AF;
+    --danger:#8C2E2E;
+    --shadow: 0 2px 10px rgba(43,33,24,0.08);
+    --radius: 10px;
+    --serif: 'Tiro Telugu', Georgia, 'Times New Roman', serif;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --mono: 'JetBrains Mono', 'Courier New', monospace;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:
+      repeating-linear-gradient(135deg, rgba(176,141,63,0.05) 0px, rgba(176,141,63,0.05) 2px, transparent 2px, transparent 14px),
+      var(--parchment);
+    color:var(--ink);
+    font-family:var(--sans);
+    min-height:100vh;
+  }
+
+  /* ---------- top ribbon ---------- */
+  .ribbon{
+    background: linear-gradient(180deg, var(--maroon) 0%, var(--maroon-dark) 100%);
+    color:#F3ECD9;
+    padding:18px 24px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    box-shadow: var(--shadow);
+    border-bottom: 3px solid var(--gold);
+  }
+  .ribbon h1{
+    font-family:var(--serif);
+    font-weight:400;
+    font-size:22px;
+    margin:0;
+    letter-spacing:0.3px;
+  }
+  .ribbon .sub{
+    font-size:12px;
+    opacity:0.8;
+    margin-top:2px;
+    letter-spacing:0.5px;
+    text-transform:uppercase;
+  }
+  .ribbon-right{ display:flex; align-items:center; gap:14px; }
+
+  .status-pill{
+    font-family:var(--mono);
+    font-size:11px;
+    padding:5px 10px;
+    border-radius:20px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+    background:rgba(0,0,0,0.18);
+    white-space:nowrap;
+  }
+  .dot{ width:7px; height:7px; border-radius:50%; background:#7FA88C; }
+  .dot.off{ background:#D9A441; }
+  .dot.busy{ background:#D9A441; animation:pulse 1.2s infinite; }
+  @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+  button{
+    font-family:var(--sans);
+    cursor:pointer;
+    border:none;
+    border-radius:7px;
+    padding:9px 16px;
+    font-size:13px;
+    font-weight:600;
+    transition:transform 0.06s ease, opacity 0.15s ease;
+  }
+  button:active{ transform:scale(0.97); }
+  .btn-primary{ background:var(--gold); color:#2B2118; }
+  .btn-primary:hover{ opacity:0.9; }
+  .btn-ghost{ background:rgba(255,255,255,0.12); color:#F3ECD9; }
+  .btn-ghost:hover{ background:rgba(255,255,255,0.2); }
+  .btn-outline{ background:transparent; border:1.5px solid var(--maroon); color:var(--maroon); }
+  .btn-outline:hover{ background:rgba(122,46,46,0.06); }
+  .btn-danger{ background:transparent; color:var(--danger); border:1.5px solid var(--danger); }
+  .btn-danger:hover{ background:rgba(140,46,46,0.06); }
+  .btn-small{ padding:6px 10px; font-size:12px; }
+  button:disabled{ opacity:0.45; cursor:not-allowed; }
+
+  .wrap{ max-width:1080px; margin:0 auto; padding:28px 20px 80px; }
+
+  /* ---------- setup / login screens ---------- */
+  .center-screen{
+    min-height:calc(100vh - 40px);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+  .panel{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:36px 34px;
+    width:100%;
+    max-width:440px;
+  }
+  .panel-wide{ max-width:620px; }
+  .panel h2{
+    font-family:var(--serif);
+    font-weight:400;
+    font-size:24px;
+    margin:0 0 6px;
+    color:var(--maroon-dark);
+  }
+  .panel p.hint{ color:var(--ink-soft); font-size:13px; line-height:1.5; margin:0 0 22px; }
+  label{ display:block; font-size:12px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.4px; margin:14px 0 6px; }
+  label:first-of-type{ margin-top:0; }
+  input, select, textarea{
+    width:100%;
+    padding:10px 12px;
+    border:1.5px solid var(--line);
+    border-radius:7px;
+    font-family:var(--sans);
+    font-size:14px;
+    background:#fff;
+    color:var(--ink);
+  }
+  input:focus, select:focus, textarea:focus{ outline:none; border-color:var(--gold); }
+  textarea{ resize:vertical; min-height:70px; }
+  .form-actions{ display:flex; gap:10px; margin-top:22px; }
+  .error-msg{
+    background:#FBEAEA; color:var(--danger); border:1px solid #E7B9B9;
+    padding:9px 12px; border-radius:7px; font-size:13px; margin-top:14px;
+  }
+  .ok-msg{
+    background:#EAF2EC; color:var(--teal); border:1px solid #BFD8C7;
+    padding:9px 12px; border-radius:7px; font-size:13px; margin-top:14px;
+  }
+  .link-btn{ background:none; border:none; color:var(--maroon); font-size:12.5px; text-decoration:underline; padding:2px 0; font-weight:500; }
+
+  /* ---------- toolbar ---------- */
+  .toolbar{
+    display:flex; align-items:center; justify-content:space-between; gap:14px;
+    margin-bottom:18px; flex-wrap:wrap;
+  }
+  .search-box{
+    flex:1; min-width:220px;
+    position:relative;
+  }
+  .search-box input{
+    padding-left:34px;
+    background:var(--card);
+  }
+  .search-box::before{
+    content:"⌕"; position:absolute; left:11px; top:50%; transform:translateY(-50%);
+    color:var(--ink-soft); font-size:16px;
+  }
+  .toolbar-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+
+  /* ---------- tabs ---------- */
+  .tabs{
+    max-width:1080px; margin:0 auto; padding:16px 20px 0; display:flex; gap:6px;
+  }
+  .tab-btn{
+    background:transparent; color:var(--ink-soft); border:none; border-bottom:2.5px solid transparent;
+    border-radius:0; padding:8px 4px; margin-right:18px; font-size:13.5px; font-weight:600;
+  }
+  .tab-btn.active{ color:var(--maroon-dark); border-bottom-color:var(--gold); }
+  .tab-btn:hover{ color:var(--maroon-dark); }
+
+  .register-head{
+    font-family:var(--serif); font-size:15px; color:var(--maroon-dark);
+    padding:14px 16px; border-bottom:1px solid var(--line);
+  }
+
+  /* ---------- table ---------- */
+  .table-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    overflow:hidden;
+  }
+  table{ width:100%; border-collapse:collapse; font-size:13.5px; }
+  thead th{
+    text-align:left;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    color:var(--ink-soft);
+    background:rgba(176,141,63,0.10);
+    padding:11px 14px;
+    border-bottom:1.5px solid var(--line);
+    font-weight:700;
+  }
+  tbody td{
+    padding:11px 14px;
+    border-bottom:1px solid var(--line);
+    vertical-align:top;
+  }
+  tbody tr:last-child td{ border-bottom:none; }
+  tbody tr:hover{ background:rgba(176,141,63,0.06); }
+  .book-title{ font-weight:600; color:var(--maroon-dark); }
+  .book-meta{ color:var(--ink-soft); font-size:12px; margin-top:2px; }
+  .badge{
+    display:inline-block; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:600;
+  }
+  .badge-avail{ background:#EAF2EC; color:var(--teal); }
+  .badge-out{ background:#FBEAEA; color:var(--danger); }
+  .row-actions{ display:flex; gap:6px; }
+  .empty-state{ text-align:center; padding:60px 20px; color:var(--ink-soft); }
+  .empty-state .big{ font-family:var(--serif); font-size:19px; color:var(--maroon-dark); margin-bottom:6px; }
+
+  /* ---------- modal ---------- */
+  .modal-backdrop{
+    position:fixed; inset:0; background:rgba(43,33,24,0.45);
+    display:flex; align-items:center; justify-content:center; z-index:100; padding:20px;
+  }
+  .modal{
+    background:var(--card); border-radius:var(--radius); box-shadow:0 10px 40px rgba(0,0,0,0.25);
+    width:100%; max-width:480px; padding:28px 30px; max-height:90vh; overflow-y:auto;
+  }
+  .modal h3{ font-family:var(--serif); font-weight:400; font-size:20px; margin:0 0 18px; color:var(--maroon-dark); }
+  .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:0 14px; }
+
+  /* ---------- users panel ---------- */
+  .user-row{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 14px; border-bottom:1px solid var(--line);
+  }
+  .user-row:last-child{ border-bottom:none; }
+  .role-tag{
+    font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px;
+    padding:2px 8px; border-radius:20px; background:rgba(176,141,63,0.18); color:var(--gold-dark, #8a6b28);
+  }
+  .role-tag.admin{ background:rgba(122,46,46,0.12); color:var(--maroon); }
+
+  footer.credit{ text-align:center; color:var(--ink-soft); font-size:11.5px; padding:30px 0 10px; }
+
+  /* ---------- landing page ---------- */
+  .landing{ min-height:100vh; display:flex; flex-direction:column; }
+  .landing-nav{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:20px 34px; max-width:1080px; margin:0 auto; width:100%;
+  }
+  .landing-nav .mark{ font-family:var(--serif); font-size:17px; color:var(--maroon-dark); }
+  .thread-motif{ width:100%; overflow:hidden; line-height:0; }
+  .landing-hero{
+    flex:1; display:flex; align-items:center; justify-content:center;
+    text-align:center; padding:40px 24px 60px;
+  }
+  .landing-hero-inner{ max-width:640px; }
+  .eyebrow{
+    font-family:var(--mono); font-size:11.5px; letter-spacing:1.6px; text-transform:uppercase;
+    color:var(--gold); margin-bottom:18px; display:inline-block;
+  }
+  .landing-hero h1{
+    font-family:var(--serif); font-weight:400; font-size:46px; line-height:1.15;
+    color:var(--maroon-dark); margin:0 0 4px;
+  }
+  .landing-hero h1 span{ display:block; font-size:22px; color:var(--ink-soft); font-style:italic; margin-top:6px; }
+  .landing-tagline{
+    font-size:15.5px; color:var(--ink-soft); line-height:1.65; max-width:480px;
+    margin:22px auto 34px;
+  }
+  .landing-cta{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+  .btn-lg{ padding:13px 26px; font-size:14px; }
+
+  .landing-section{ max-width:1080px; margin:0 auto; padding:10px 24px 60px; width:100%; }
+  .landing-section h2{
+    font-family:var(--serif); font-weight:400; font-size:22px; color:var(--maroon-dark);
+    text-align:center; margin:0 0 8px;
+  }
+  .landing-section .lede{ text-align:center; color:var(--ink-soft); font-size:13.5px; max-width:520px; margin:0 auto 32px; line-height:1.6; }
+
+  .category-grid{ display:grid; grid-template-columns:repeat(4, 1fr); gap:16px; }
+  .category-card{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:22px 18px; text-align:center; box-shadow:var(--shadow);
+  }
+  .category-card .num{
+    font-family:var(--mono); font-size:11px; color:var(--gold); letter-spacing:1px; margin-bottom:10px; display:block;
+  }
+  .category-card h3{ font-family:var(--serif); font-weight:400; font-size:16px; color:var(--maroon-dark); margin:0 0 6px; }
+  .category-card p{ font-size:12px; color:var(--ink-soft); line-height:1.5; margin:0; }
+
+  .landing-footer{ text-align:center; padding:24px 20px 34px; color:var(--ink-soft); font-size:11.5px; border-top:1px solid var(--line); }
+
+  /* ---------- toast ---------- */
+  #global-toast{
+    position:fixed; left:50%; bottom:22px; transform:translateX(-50%);
+    background:var(--ink); color:#F3ECD9; padding:11px 18px; border-radius:8px;
+    font-size:13px; box-shadow:0 6px 20px rgba(0,0,0,0.25); z-index:200;
+    max-width:90vw; display:none;
+  }
+  #global-toast.toast-error{ background:var(--danger); }
+  #global-toast.toast-ok{ background:var(--teal); }
+
+  /* ---------- stats bar ---------- */
+  .stats-bar{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px; }
+  .stat-chip{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:10px 16px; min-width:100px; box-shadow:var(--shadow);
+  }
+  .stat-num{ font-family:var(--serif); font-size:20px; color:var(--maroon-dark); }
+  .stat-label{ font-size:11px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.4px; margin-top:2px; }
+
+  @media (max-width:760px){
+    .category-grid{ grid-template-columns:1fr 1fr; }
+    .landing-hero h1{ font-size:34px; }
+  }
+  @media (max-width:480px){
+    .category-grid{ grid-template-columns:1fr; }
+  }
+
+  /* ---------- print ---------- */
+  @media print{
+    .no-print{ display:none !important; }
+    body{ background:#fff; }
+    .table-card{ box-shadow:none; border:none; }
+    thead th{ background:#eee !important; -webkit-print-color-adjust:exact; }
+  }
+
+  @media (max-width:600px){
+    .grid-2{ grid-template-columns:1fr; }
+    .ribbon{ flex-direction:column; align-items:flex-start; }
+    thead{ display:none; }
+    table, tbody, tr, td{ display:block; width:100%; }
+    tbody tr{ border-bottom:2px solid var(--line); padding:10px 0; }
+    tbody td{ border-bottom:none; padding:4px 14px; }
+    tbody td::before{ content: attr(data-label); font-weight:700; text-transform:uppercase; font-size:10px; color:var(--ink-soft); display:block; }
+  }
+</style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<!-- Firebase and xlsx load lazily, only once "Sign in" is clicked — see ensureFirebaseSDK() below. -->
+<script>
+  function loadScript(src){
+    return new Promise(function(resolve, reject){
+      const s = document.createElement('script');
+      s.src = src; s.onload = resolve; s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  }
+  let _firebaseSdkLoaded = false;
+  function ensureFirebaseSDK(){
+    if(_firebaseSdkLoaded) return Promise.resolve();
+    return loadScript('https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js')
+      .then(function(){
+        return Promise.all([
+          loadScript('https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js'),
+          loadScript('https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js'),
+          loadScript('https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js')
+        ]);
+      })
+      .then(function(){ _firebaseSdkLoaded = true; });
+  }
+</script>
+
+<script>
+(function(){
+  "use strict";
+
+  const root = document.getElementById('root');
+  const CONFIG_KEY = 'skk_lib_firebase_config';
+  const ROLE_CACHE_KEY = 'skk_lib_role_cache';
+
+  // Embedded so the app works out of the box on any device/host with no setup step.
+  const EMBEDDED_CONFIG = {
+    apiKey: "AIzaSyD24jrS3IFcOzztK8mjhHNhgDnPaiajZxs",
+    authDomain: "kuchipudi-kala-kshetram-lib.firebaseapp.com",
+    projectId: "kuchipudi-kala-kshetram-lib",
+    storageBucket: "kuchipudi-kala-kshetram-lib.firebasestorage.app",
+    messagingSenderId: "466278077648",
+    appId: "1:466278077648:web:eeecb30d321530965f7ad5"
+  };
+
+  const CATEGORIES = ["Donated Books", "Telugu University", "Vistara Seva Vibhagam", "UGC"];
+
+  let app=null, auth=null, db=null, secondaryApp=null;
+  let currentUser=null;
+  let currentUserName=null;
+  let currentRole=null; // 'admin' | 'readonly'
+  let books=[]; // live cache from Firestore snapshot
+  let unsubscribeBooks=null;
+  let loans=[]; // live cache of borrow/return records
+  let unsubscribeLoans=null;
+  let searchTerm='';
+  let categoryFilter='';
+  let netStatus = navigator.onLine ? 'checking' : 'offline'; // checking | online | offline
+  let catalogLoading = false;
+
+  // ---------------- user-facing write/error feedback ----------------
+  let toastTimer=null;
+  function showToast(message, isError){
+    let t = document.getElementById('global-toast');
+    if(!t){ t = document.createElement('div'); t.id='global-toast'; document.body.appendChild(t); }
+    t.textContent = message;
+    t.className = isError ? 'toast-error' : 'toast-ok';
+    t.style.display = 'block';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ t.style.display='none'; }, 4000);
+  }
+
+  function withRoman(b){ b._titleRoman = teluguToRoman(b.title); b._authorRoman = teluguToRoman(b.author); return b; }
+
+  // ---------------- utility ----------------
+  function el(tag, attrs, children){
+    const e = document.createElement(tag);
+    if(attrs) for(const k in attrs){
+      if(k==='class') e.className=attrs[k];
+      else if(k==='html') e.innerHTML=attrs[k];
+      else if(k.startsWith('on')) e.addEventListener(k.slice(2), attrs[k]);
+      else if(k==='disabled' || k==='checked' || k==='selected' || k==='readonly'){
+        if(attrs[k]) e.setAttribute(k, '');
+      }
+      else e.setAttribute(k, attrs[k]);
+    }
+    (children||[]).forEach(c=>{ if(c) e.appendChild(typeof c==='string'?document.createTextNode(c):c); });
+    return e;
+  }
+  function escapeHtml(s){
+    return (s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+  function fmtDate(ts){
+    if(!ts) return '—';
+    try{
+      const d = ts.toDate ? ts.toDate() : new Date(ts);
+      return d.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'});
+    }catch(e){ return '—'; }
+  }
+
+  // ============================================================
+  // SEARCH ENGINE: accession-number-first ordering + fuzzy Telugu/English matching
+  // ============================================================
+
+  // Approximate Telugu -> Roman phonetic transliteration, so an English-typed
+  // query ("konchem") can fuzzy-match Telugu text ("కొంచెం") without the person
+  // needing a Telugu keyboard. This is phonetic, not a formal transliteration
+  // standard — good enough for search, not meant to be linguistically exact.
+  const TG_VOWELS = {'అ':'a','ఆ':'aa','ఇ':'i','ఈ':'ii','ఉ':'u','ఊ':'uu','ఋ':'ru','ౠ':'ruu','ఌ':'lu','ౡ':'luu','ఎ':'e','ఏ':'ee','ఐ':'ai','ఒ':'o','ఓ':'oo','ఔ':'au'};
+  const TG_CONS = {'క':'ka','ఖ':'kha','గ':'ga','ఘ':'gha','ఙ':'nga','చ':'cha','ఛ':'chha','జ':'ja','ఝ':'jha','ఞ':'nya','ట':'ta','ఠ':'tha','డ':'da','ఢ':'dha','ణ':'na','త':'ta','థ':'tha','ద':'da','ధ':'dha','న':'na','ప':'pa','ఫ':'pha','బ':'ba','భ':'bha','మ':'ma','య':'ya','ర':'ra','ల':'la','వ':'va','శ':'sha','ష':'sha','స':'sa','హ':'ha','ళ':'la','ఱ':'ra','ఴ':'la'};
+  const TG_MATRA = {'ా':'aa','ి':'i','ీ':'ii','ు':'u','ూ':'uu','ృ':'ru','ౄ':'ruu','ె':'e','ే':'ee','ై':'ai','ొ':'o','ో':'oo','ౌ':'au'};
+  const TG_VIRAMA = '్', TG_ANUSVARA = 'ం', TG_VISARGA = 'ః', TG_CHANDRABINDU = 'ఁ';
+
+  function teluguToRoman(str){
+    if(!str) return '';
+    const chars = Array.from(String(str));
+    let out = '';
+    for(let i=0;i<chars.length;i++){
+      const ch = chars[i];
+      if(TG_CONS[ch]){
+        const base = TG_CONS[ch], stem = base.slice(0,-1); // strip inherent trailing 'a'
+        const next = chars[i+1];
+        if(next===TG_VIRAMA){ out += stem; i++; }
+        else if(next && TG_MATRA[next]){ out += stem + TG_MATRA[next]; i++; }
+        else { out += base; }
+      } else if(TG_VOWELS[ch]){
+        out += TG_VOWELS[ch];
+      } else if(ch===TG_ANUSVARA){ out += 'm'; }
+      else if(ch===TG_VISARGA){ out += 'h'; }
+      else if(ch===TG_CHANDRABINDU){ out += 'n'; }
+      else if(ch===TG_VIRAMA){ /* stray, skip */ }
+      else { out += ch.toLowerCase(); }
+    }
+    return out;
+  }
+
+  function normalizeSearchText(s){
+    return String(s||'').toLowerCase().replace(/[\[\]().,\-–—'"]/g, '').replace(/\s+/g, ' ').trim();
+  }
+
+  function levenshtein(a, b){
+    if(a===b) return 0;
+    if(!a.length) return b.length;
+    if(!b.length) return a.length;
+    let prev = new Array(b.length+1);
+    for(let j=0;j<=b.length;j++) prev[j]=j;
+    for(let i=1;i<=a.length;i++){
+      const cur = [i];
+      for(let j=1;j<=b.length;j++){
+        cur[j] = Math.min(
+          prev[j]+1,
+          cur[j-1]+1,
+          prev[j-1] + (a[i-1]===b[j-1] ? 0 : 1)
+        );
+      }
+      prev = cur;
+    }
+    return prev[b.length];
+  }
+
+  // Returns 0 (no match), 2 (fuzzy match), or 3 (direct substring match) for query vs one text field.
+  function fuzzyFieldScore(query, text){
+    if(!query || !text) return 0;
+    const nq = normalizeSearchText(query), nt = normalizeSearchText(text);
+    if(!nq || !nt) return 0;
+    if(nt.indexOf(nq) > -1) return 3;
+    const threshold = nq.length<=3 ? 1 : Math.max(1, Math.floor(nq.length*0.3));
+    const words = nt.split(' ');
+    for(let i=0;i<words.length;i++){
+      const w = words[i];
+      if(!w) continue;
+      const clip = w.length>nq.length ? w.slice(0, nq.length+2) : w;
+      if(levenshtein(nq, clip) <= threshold) return 2;
+    }
+    return 0;
+  }
+
+  // Best score for query against a Telugu field, checking both the raw text
+  // and its Roman transliteration (so English typing matches Telugu content).
+  function fuzzyTeluguScore(query, rawText, romanText){
+    return Math.max(fuzzyFieldScore(query, rawText), fuzzyFieldScore(query, romanText));
+  }
+
+  // Natural sort for accession numbers like "01", "1800", "A 01", "D178", "L 849" —
+  // groups by leading letters, then compares the numeric part as a number.
+  function parseAccession(acc){
+    const s = String(acc||'').trim();
+    const m = s.match(/^([A-Za-z]*)\s*0*(\d+)(.*)$/);
+    if(m) return {prefix:m[1].toUpperCase(), num:parseInt(m[2],10), rest:m[3].trim(), raw:s};
+    return {prefix:'', num:Number.MAX_SAFE_INTEGER, rest:s, raw:s};
+  }
+  function compareAccession(a, b){
+    const pa = parseAccession(a), pb = parseAccession(b);
+    if(pa.prefix !== pb.prefix) return pa.prefix.localeCompare(pb.prefix);
+    if(pa.num !== pb.num) return pa.num - pb.num;
+    if(pa.rest !== pb.rest) return pa.rest.localeCompare(pb.rest);
+    return pa.raw.localeCompare(pb.raw);
+  }
+
+  // Ranks a book against a search query: accession-number matches always
+  // outrank title/author matches, per the register's own numbering being
+  // the primary way books are found; title/author are complementary.
+  function scoreBookAgainstQuery(book, query){
+    if(!query) return 1; // no query — everything matches, sort falls through to accession order
+    const accScore = fuzzyFieldScore(query, book.accessionNo);
+    if(accScore>0) return 1000 + accScore;
+    const titleScore = fuzzyTeluguScore(query, book.title, book._titleRoman);
+    const authorScore = fuzzyTeluguScore(query, book.author, book._authorRoman);
+    const categoryScore = fuzzyFieldScore(query, book.category);
+    const isbnScore = fuzzyFieldScore(query, book.isbn);
+    return Math.max(titleScore, authorScore, categoryScore, isbnScore);
+  }
+
+  function sortAndFilterBooks(list, query){
+    const q = (query||'').trim();
+    const scored = list.map(function(b){ return {book:b, score:scoreBookAgainstQuery(b, q)}; })
+      .filter(function(x){ return x.score>0; });
+    scored.sort(function(x,y){
+      if(y.score !== x.score) return y.score - x.score;
+      return compareAccession(x.book.accessionNo, y.book.accessionNo);
+    });
+    return scored.map(function(x){ return x.book; });
+  }
+
+  function getConfig(){
+    try{ return JSON.parse(localStorage.getItem(CONFIG_KEY)); }catch(e){ return null; }
+  }
+  function setConfig(cfg){ localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg)); }
+
+  function cacheRole(uid, role){
+    try{
+      const c = JSON.parse(localStorage.getItem(ROLE_CACHE_KEY) || '{}');
+      c[uid] = role;
+      localStorage.setItem(ROLE_CACHE_KEY, JSON.stringify(c));
+    }catch(e){}
+  }
+  function getCachedRole(uid){
+    try{
+      const c = JSON.parse(localStorage.getItem(ROLE_CACHE_KEY) || '{}');
+      return c[uid] || null;
+    }catch(e){ return null; }
+  }
+
+  // ---------------- firebase init ----------------
+  function initFirebase(cfg){
+    try{
+      if(!app){
+        app = firebase.initializeApp(cfg);
+        auth = firebase.auth();
+        db = firebase.firestore();
+        db.enablePersistence({synchronizeTabs:true}).catch(function(err){
+          console.warn('Persistence not enabled:', err.code);
+        });
+      }
+      return true;
+    }catch(e){
+      console.error(e);
+      return false;
+    }
+  }
+
+  window.addEventListener('online', ()=>{ netStatus='online'; renderStatusOnly(); });
+  window.addEventListener('offline', ()=>{ netStatus='offline'; renderStatusOnly(); });
+
+  // ============================================================
+  // RENDER: SETUP SCREEN (first run — connect Firebase project)
+  // ============================================================
+  function renderSetup(prefill, errorMsg){
+    root.innerHTML='';
+    const wrap = el('div', {class:'center-screen'});
+    const panel = el('div', {class:'panel panel-wide'});
+    panel.appendChild(el('h2', null, ['Connect the library']));
+    panel.appendChild(el('p', {class:'hint'}, [
+      'This is a one-time setup on this device/site. Paste the Firebase project config from your Firebase Console → Project Settings → Your apps → SDK setup and configuration. It is stored only in this browser and is safe to keep here — real security is enforced by Firestore rules, not by hiding this.'
+    ]));
+
+    const ta = el('textarea', {rows:10, placeholder:'{\n  "apiKey": "...",\n  "authDomain": "...",\n  "projectId": "...",\n  "storageBucket": "...",\n  "messagingSenderId": "...",\n  "appId": "..."\n}'});
+    if(prefill) ta.value = prefill;
+    panel.appendChild(el('label', null, ['Firebase config (JSON)']));
+    panel.appendChild(ta);
+
+    if(errorMsg) panel.appendChild(el('div', {class:'error-msg'}, [errorMsg]));
+
+    const actions = el('div', {class:'form-actions'});
+    const btn = el('button', {class:'btn-primary', style:'flex:1', onclick: function(){
+      let parsed;
+      try{ parsed = JSON.parse(ta.value); }
+      catch(e){ renderSetup(ta.value, 'That is not valid JSON. Paste the exact object from Firebase Console.'); return; }
+      if(!parsed.apiKey || !parsed.projectId){
+        renderSetup(ta.value, 'Config looks incomplete — needs at least apiKey and projectId.'); return;
+      }
+      setConfig(parsed);
+      const ok = initFirebase(parsed);
+      if(!ok){ renderSetup(ta.value, 'Could not connect with this config. Double check it.'); return; }
+      boot();
+    }}, ['Connect']);
+    actions.appendChild(btn);
+    panel.appendChild(actions);
+
+    panel.appendChild(el('p', {class:'hint', style:'margin-top:18px; margin-bottom:0;'}, [
+      'Don\u2019t have a Firebase project yet? Go to console.firebase.google.com → Add project → (free Spark plan is enough) → Build → Firestore Database → Create database → Build → Authentication → Sign-in method → enable Email/Password. Then Project Settings → add a Web app to get this config.'
+    ]));
+
+    wrap.appendChild(panel);
+    root.appendChild(wrap);
+  }
+
+  // ============================================================
+  // RENDER: LANDING PAGE (public entry point, before sign-in)
+  // ============================================================
+  function enterGuestCatalog(){
+    currentUser = null;
+    currentRole = 'guest';
+    currentUserName = null;
+    currentView = 'catalog';
+    if(unsubscribeLoans){ unsubscribeLoans(); unsubscribeLoans=null; }
+    if(unsubscribeBooks){ unsubscribeBooks(); unsubscribeBooks=null; }
+
+    catalogLoading = true;
+    books = [];
+    renderApp();
+
+    // Public reads never touch Firestore — this is a plain HTTP request to the
+    // Python backend, which keeps its own live-synced copy. The browser's normal
+    // HTTP cache (via the server's ETag/Cache-Control headers) handles repeat
+    // visits; there's no custom caching code here at all.
+    fetch('/api/books')
+      .then(function(res){
+        if(!res.ok) throw new Error('status ' + res.status);
+        return res.json();
+      })
+      .then(function(data){
+        books = data.map(withRoman);
+        catalogLoading = false;
+        netStatus = 'online';
+        renderApp();
+      })
+      .catch(function(){
+        // Most likely this file is open locally (e.g. admin's desktop copy)
+        // with no Python server behind it — that's fine, sign in instead.
+        catalogLoading = false;
+        netStatus = 'offline';
+        books = [];
+        renderApp();
+      });
+  }
+
+  // ============================================================
+  // RENDER: LOGIN SCREEN
+  // ============================================================
+  function renderLogin(errorMsg){
+    root.innerHTML='';
+    const wrap = el('div', {class:'center-screen'});
+    const panel = el('div', {class:'panel'});
+    panel.appendChild(el('h2', null, ['Siddhendra Kala Kshetram']));
+    panel.appendChild(el('p', {class:'hint'}, ['Library catalog — sign in to continue.']));
+
+    const emailInp = el('input', {type:'email', placeholder:'you@example.com', autocomplete:'username'});
+    const passInp = el('input', {type:'password', placeholder:'••••••••', autocomplete:'current-password'});
+    panel.appendChild(el('label', null, ['Email']));
+    panel.appendChild(emailInp);
+    panel.appendChild(el('label', null, ['Password']));
+    panel.appendChild(passInp);
+
+    const msgHolder = el('div');
+    if(errorMsg) msgHolder.appendChild(el('div', {class:'error-msg'}, [errorMsg]));
+    panel.appendChild(msgHolder);
+
+    const doLogin = function(){
+      const email = emailInp.value.trim(), pass = passInp.value;
+      if(!email || !pass){ renderLogin('Enter both email and password.'); return; }
+      if(!auth){ renderLogin('Not connected to Firebase yet. Reload the page.'); return; }
+      auth.signInWithEmailAndPassword(email, pass).catch(function(err){
+        renderLogin(friendlyAuthError(err));
+      });
+      // success handled by onAuthStateChanged
+    };
+
+    const actions = el('div', {class:'form-actions'});
+    actions.appendChild(el('button', {class:'btn-primary', style:'flex:1', onclick:doLogin}, ['Sign in']));
+    panel.appendChild(actions);
+    passInp.addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
+
+    panel.appendChild(el('div', {style:'margin-top:18px;'}, [
+      el('button', {class:'link-btn', onclick:function(){ enterGuestCatalog(); }}, ['← Back'])
+    ]));
+
+    wrap.appendChild(panel);
+    root.appendChild(wrap);
+    emailInp.focus();
+  }
+
+  function friendlyAuthError(err){
+    const map = {
+      'auth/invalid-email':'That email address looks invalid.',
+      'auth/user-disabled':'This account has been disabled.',
+      'auth/user-not-found':'No account with that email.',
+      'auth/wrong-password':'Incorrect password.',
+      'auth/invalid-credential':'Incorrect email or password.',
+      'auth/network-request-failed':'No network — sign in needs internet the first time on a device.',
+      'auth/too-many-requests':'Too many attempts. Wait a bit and try again.',
+      'auth/email-already-in-use':'That email is already registered.',
+      'auth/weak-password':'Password should be at least 6 characters.'
+    };
+    return map[err.code] || (err.message || 'Something went wrong signing in.');
+  }
+
+  // ============================================================
+  // MAIN APP SHELL
+  // ============================================================
+  let addBookModalOpen=false, editBookId=null, usersModalOpen=false;
+  let currentView='catalog';
+  let registerSearch='';
+  let selectedBookId=null;
+  let borrowModalBookId=null;
+  let returnModalLoanId=null;
+  let importModalOpen=false;
+  let deletedModalOpen=false;
+
+  function renderApp(){
+    if(currentRole==='guest' && currentView==='register') currentView='catalog';
+    root.innerHTML='';
+
+    const ribbon = el('div', {class:'ribbon no-print'});
+    const left = el('div');
+    left.appendChild(el('h1', null, ['Siddhendra Kala Kshetram']));
+    left.appendChild(el('div', {class:'sub'}, ['Library Catalog · Kuchipudi']));
+    ribbon.appendChild(left);
+
+    const right = el('div', {class:'ribbon-right'});
+    right.appendChild(statusPill());
+    if(currentRole==='guest'){
+      right.appendChild(el('button', {class:'btn-ghost btn-small', onclick:function(){ enterGuestCatalog(); }}, ['Refresh']));
+      right.appendChild(el('button', {class:'btn-ghost btn-small', onclick:startSignIn}, ['Sign in']));
+    } else {
+      right.appendChild(el('span', {style:'font-size:12px; opacity:0.85;'}, [(currentUserName || currentUser.email) + ' · ' + (currentRole==='admin'?'Admin':'Read-only')]));
+      if(currentRole==='admin'){
+        right.appendChild(el('button', {class:'btn-ghost btn-small', onclick:function(){ usersModalOpen=true; renderApp(); }}, ['Manage logins']));
+      }
+      right.appendChild(el('button', {class:'btn-ghost btn-small', onclick:function(){ auth.signOut(); }}, ['Sign out']));
+    }
+    ribbon.appendChild(right);
+    root.appendChild(ribbon);
+
+    const tabs = el('div', {class:'tabs no-print'});
+    tabs.appendChild(el('button', {class:'tab-btn'+(currentView==='catalog'?' active':''), onclick:function(){ currentView='catalog'; renderApp(); }}, ['Catalog']));
+    if(currentRole!=='guest'){
+      tabs.appendChild(el('button', {class:'tab-btn'+(currentView==='register'?' active':''), onclick:function(){ currentView='register'; renderApp(); }}, ['Borrowing Register']));
+    }
+    root.appendChild(tabs);
+
+    const wrap = el('div', {class:'wrap'});
+    wrap.appendChild(el('div', {id:'view-holder'}));
+    root.appendChild(wrap);
+
+    if(currentRole!=='guest'){
+      root.appendChild(el('footer', {class:'credit no-print'}, ['Built for the campus library — works offline once loaded, syncs automatically when online.']));
+    }
+
+    renderViewOnly();
+
+    if(addBookModalOpen) renderBookModal();
+    if(usersModalOpen) renderUsersModal();
+    if(borrowModalBookId) renderBorrowModal();
+    if(returnModalLoanId) renderReturnModal();
+    if(importModalOpen) renderImportModal();
+    if(deletedModalOpen) renderDeletedModal();
+  }
+
+  function renderViewOnly(){
+    const holder = document.getElementById('view-holder');
+    if(!holder) return;
+    holder.innerHTML='';
+    if(currentView==='register'){
+      holder.appendChild(buildRegisterView());
+    } else {
+      holder.appendChild(buildCatalogView());
+      renderTableOnly();
+    }
+  }
+
+  function buildCatalogView(){
+    const container = el('div');
+
+    const toolbar = el('div', {class:'toolbar no-print'});
+    const searchBox = el('div', {class:'search-box'});
+    const searchInp = el('input', {type:'text', placeholder:'Search by acc. no. — or title/author (Telugu or English)…', value:searchTerm, oninput:function(e){ searchTerm=e.target.value; renderTableOnly(); }});
+    searchBox.appendChild(searchInp);
+    toolbar.appendChild(searchBox);
+
+    const catFilter = el('select', {style:'width:auto; min-width:170px;', onchange:function(e){ categoryFilter=e.target.value; renderTableOnly(); }});
+    catFilter.appendChild(el('option', {value:''}, ['All categories']));
+    CATEGORIES.forEach(function(c){
+      const opt = el('option', {value:c}, [c]);
+      if(categoryFilter===c) opt.selected = true;
+      catFilter.appendChild(opt);
+    });
+    toolbar.appendChild(catFilter);
+
+    const toolActions = el('div', {class:'toolbar-actions'});
+    toolActions.appendChild(el('button', {class:'btn-outline btn-small', onclick:function(){ window.print(); }}, ['Print catalog']));
+    if(currentRole==='admin'){
+      const deletedCount = books.filter(function(b){ return b.deleted; }).length;
+      if(deletedCount>0){
+        toolActions.appendChild(el('button', {class:'btn-outline btn-small', onclick:function(){ deletedModalOpen=true; renderApp(); }}, ['Deleted books ('+deletedCount+')']));
+      }
+      toolActions.appendChild(el('button', {class:'btn-outline btn-small', onclick:function(){ importModalOpen=true; renderApp(); }}, ['Import spreadsheet']));
+      toolActions.appendChild(el('button', {class:'btn-primary', onclick:function(){ editBookId=null; addBookModalOpen=true; renderApp(); }}, ['+ Add book']));
+    }
+    toolbar.appendChild(toolActions);
+    container.appendChild(toolbar);
+
+    if(!catalogLoading) container.appendChild(buildStatsBar());
+
+    container.appendChild(el('div', {id:'table-holder'}));
+    return container;
+  }
+
+  function buildStatsBar(){
+    const live = books.filter(function(b){ return !b.deleted; });
+    const totalBooks = live.length;
+    const totalCopies = live.reduce(function(s,b){ return s+Number(b.copiesTotal||0); }, 0);
+    const availCopies = live.reduce(function(s,b){ return s+Number(b.copiesAvailable!=null?b.copiesAvailable:b.copiesTotal||0); }, 0);
+    const outCopies = Math.max(0, totalCopies-availCopies);
+    const bar = el('div', {class:'stats-bar no-print'});
+    [
+      [totalBooks, 'titles'],
+      [totalCopies, 'total copies'],
+      [availCopies, 'available'],
+      [outCopies, 'checked out']
+    ].forEach(function(pair){
+      const stat = el('div', {class:'stat-chip'});
+      stat.appendChild(el('div', {class:'stat-num'}, [String(pair[0])]));
+      stat.appendChild(el('div', {class:'stat-label'}, [pair[1]]));
+      bar.appendChild(stat);
+    });
+    return bar;
+  }
+
+  function statusPill(){
+    let label, dotClass;
+    if(netStatus==='online'){ label='Synced'; dotClass=''; }
+    else if(netStatus==='offline'){ label='Offline — local copy'; dotClass='off'; }
+    else { label='Connecting…'; dotClass='busy'; }
+    return el('span', {class:'status-pill'}, [el('span', {class:'dot '+dotClass}), label]);
+  }
+  function renderStatusOnly(){
+    const holder = document.querySelector('.status-pill');
+    if(holder && holder.parentNode){
+      holder.parentNode.replaceChild(statusPill(), holder);
+    }
+  }
+
+  function renderTableOnly(){
+    const holder = document.getElementById('table-holder');
+    if(!holder) return;
+    holder.innerHTML='';
+
+    if(catalogLoading){
+      const loading = el('div', {class:'table-card'});
+      loading.appendChild(el('div', {class:'empty-state'}, [
+        el('div', {class:'big'}, ['Loading catalog…'])
+      ]));
+      holder.appendChild(loading);
+      return;
+    }
+
+    const scoped = books.filter(function(b){
+      if(b.deleted) return false;
+      if(categoryFilter && b.category !== categoryFilter) return false;
+      return true;
+    });
+    const term = searchTerm.trim();
+    const filtered = term
+      ? sortAndFilterBooks(scoped, term)
+      : scoped.slice().sort(function(a,b){ return compareAccession(a.accessionNo, b.accessionNo); });
+
+    if(filtered.length===0){
+      const empty = el('div', {class:'table-card'});
+      let heading, sub;
+      if(books.length===0 && currentRole==='guest' && netStatus==='offline'){
+        heading = 'Catalog unavailable';
+        sub = 'Could not reach the library server. If you\u2019re library staff, sign in above to manage the catalog directly.';
+      } else if(books.length===0){
+        heading = 'No books yet';
+        sub = currentRole==='admin' ? 'Add the first book to the catalog above.' : 'Ask the admin to add books to the catalog.';
+      } else {
+        heading = 'No matches';
+        sub = 'Try a different search term.';
+      }
+      empty.appendChild(el('div', {class:'empty-state'}, [
+        el('div', {class:'big'}, [heading]),
+        el('div', null, [sub])
+      ]));
+      holder.appendChild(empty);
+      return;
+    }
+
+    const card = el('div', {class:'table-card'});
+    const table = el('table');
+    const thead = el('thead');
+    const headRow = el('tr');
+    ['Acc. No.','Title','Author','Category','Copies',''].forEach(h=> headRow.appendChild(el('th', null, [h])));
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+
+    const tbody = el('tbody');
+    filtered.forEach(b=>{
+      const tr = el('tr');
+      tr.appendChild(el('td', {'data-label':'Acc. No.'}, [el('span',{style:'font-family:var(--mono); font-weight:700; color:var(--maroon-dark);'},[b.accessionNo || '—'])]));
+
+      const titleCell = el('td', {'data-label':'Title'});
+      titleCell.appendChild(el('div', {class:'book-title'}, [b.title || 'Untitled']));
+      const metaBits = [b.publisher, b.year, (b.pages ? b.pages+' pp' : '')].filter(Boolean);
+      if(metaBits.length) titleCell.appendChild(el('div', {class:'book-meta'}, [metaBits.join(' · ')]));
+      tr.appendChild(titleCell);
+
+      tr.appendChild(el('td', {'data-label':'Author'}, [b.author || '—']));
+      tr.appendChild(el('td', {'data-label':'Category'}, [b.category || '—']));
+
+      const total = Number(b.copiesTotal||0), avail = Number(b.copiesAvailable!=null?b.copiesAvailable:b.copiesTotal||0);
+      const copiesCell = el('td', {'data-label':'Copies'});
+      copiesCell.appendChild(el('span', {class:'badge ' + (avail>0?'badge-avail':'badge-out')}, [avail + ' / ' + total + (avail>0?' available':' — all out')]));
+      tr.appendChild(copiesCell);
+
+      const actionsCell = el('td', {'data-label':'', class:'no-print'});
+      if(currentRole==='admin'){
+        const rowActions = el('div', {class:'row-actions'});
+        rowActions.appendChild(el('button', {class:'btn-outline btn-small', onclick:function(){ editBookId=b.id; addBookModalOpen=true; renderApp(); }}, ['Edit']));
+        rowActions.appendChild(el('button', {class:'btn-danger btn-small', onclick:function(){ if(confirm('Remove "'+b.title+'" from the catalog?')) deleteBook(b.id); }}, ['Remove']));
+        actionsCell.appendChild(rowActions);
+      }
+      tr.appendChild(actionsCell);
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    card.appendChild(table);
+    holder.appendChild(card);
+  }
+
+  // ============================================================
+  // BOOK MODAL (add / edit)
+  // ============================================================
+  function renderBookModal(){
+    const existing = editBookId ? books.find(b=>b.id===editBookId) : null;
+    const backdrop = el('div', {class:'modal-backdrop', onclick:function(e){ if(e.target===backdrop) closeModal(); }});
+    const modal = el('div', {class:'modal'});
+    modal.appendChild(el('h3', null, [existing ? 'Edit book' : 'Add book']));
+
+    const titleInp = el('input', {type:'text', value: existing?existing.title||'':''});
+    const authorInp = el('input', {type:'text', value: existing?existing.author||'':''});
+    const categoryInp = el('select');
+    categoryInp.appendChild(el('option', {value:''}, ['— Select category —']));
+    CATEGORIES.forEach(function(c){
+      const opt = el('option', {value:c}, [c]);
+      if(existing && existing.category===c) opt.selected = true;
+      categoryInp.appendChild(opt);
+    });
+    const isbnInp = el('input', {type:'text', value: existing?existing.isbn||'':''});
+    const accessionInp = el('input', {type:'text', value: existing?existing.accessionNo||'':'', placeholder:'e.g. A 01'});
+    const publisherInp = el('input', {type:'text', value: existing?existing.publisher||'':''});
+    const yearInp = el('input', {type:'text', value: existing?existing.year||'':'', placeholder:'e.g. 1998'});
+    const pagesInp = el('input', {type:'text', value: existing?existing.pages||'':'', placeholder:'e.g. 262'});
+    const totalInp = el('input', {type:'number', min:'0', value: existing?(existing.copiesTotal!=null?existing.copiesTotal:1):1});
+    const availInp = el('input', {type:'number', min:'0', value: existing?(existing.copiesAvailable!=null?existing.copiesAvailable:existing.copiesTotal||1):1});
+
+    modal.appendChild(el('label', null, ['Title *']));
+    modal.appendChild(titleInp);
+    modal.appendChild(el('label', null, ['Author']));
+    modal.appendChild(authorInp);
+
+    const g1 = el('div', {class:'grid-2'});
+    const c1 = el('div'); c1.appendChild(el('label',null,['Category'])); c1.appendChild(categoryInp);
+    const c2 = el('div'); c2.appendChild(el('label',null,['Accession / register no.'])); c2.appendChild(accessionInp);
+    g1.appendChild(c1); g1.appendChild(c2);
+    modal.appendChild(g1);
+
+    const g2 = el('div', {class:'grid-2'});
+    const c3 = el('div'); c3.appendChild(el('label',null,['Publisher'])); c3.appendChild(publisherInp);
+    const c4 = el('div'); c4.appendChild(el('label',null,['Year'])); c4.appendChild(yearInp);
+    g2.appendChild(c3); g2.appendChild(c4);
+    modal.appendChild(g2);
+
+    const g2b = el('div', {class:'grid-2'});
+    const c3b = el('div'); c3b.appendChild(el('label',null,['Pages'])); c3b.appendChild(pagesInp);
+    const c4b = el('div'); c4b.appendChild(el('label',null,['ISBN (if any)'])); c4b.appendChild(isbnInp);
+    g2b.appendChild(c3b); g2b.appendChild(c4b);
+    modal.appendChild(g2b);
+
+    const g3 = el('div', {class:'grid-2'});
+    const c5 = el('div'); c5.appendChild(el('label',null,['Total copies'])); c5.appendChild(totalInp);
+    const c6 = el('div'); c6.appendChild(el('label',null,['Available now'])); c6.appendChild(availInp);
+    g3.appendChild(c5); g3.appendChild(c6);
+    modal.appendChild(g3);
+
+    const errHolder = el('div');
+    modal.appendChild(errHolder);
+
+    const actions = el('div', {class:'form-actions'});
+    actions.appendChild(el('button', {class:'btn-outline', onclick:closeModal}, ['Cancel']));
+    const saveBtn = el('button', {class:'btn-primary', style:'flex:1', onclick:function(){
+      errHolder.innerHTML='';
+      const title = titleInp.value.trim();
+      const category = categoryInp.value;
+      const total = Number(totalInp.value)||0;
+      const avail = Number(availInp.value)||0;
+      const accNo = accessionInp.value.trim();
+
+      if(!title){ errHolder.appendChild(el('div',{class:'error-msg'},['Title is required.'])); return; }
+      if(!category){ errHolder.appendChild(el('div',{class:'error-msg'},['Choose a category.'])); return; }
+      if(total<0 || avail<0 || avail>total){ errHolder.appendChild(el('div',{class:'error-msg'},['Available copies must be between 0 and total copies.'])); return; }
+
+      const data = {
+        title: title,
+        author: authorInp.value.trim(),
+        category: category,
+        isbn: isbnInp.value.trim(),
+        accessionNo: accNo,
+        publisher: publisherInp.value.trim(),
+        year: yearInp.value.trim(),
+        pages: pagesInp.value.trim(),
+        copiesTotal: total,
+        copiesAvailable: avail,
+        deleted: false,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      const proceed = function(){
+        saveBook(existing ? existing.id : null, data, existing);
+        closeModal();
+      };
+
+      if(!accNo){ proceed(); return; }
+      saveBtn.disabled = true;
+      db.collection('books').where('accessionNo','==',accNo).limit(5).get().then(function(snap){
+        saveBtn.disabled = false;
+        const clash = snap.docs.find(function(d){ return d.id !== (existing?existing.id:null) && !d.data().deleted; });
+        if(clash){
+          const otherTitle = clash.data().title || 'another book';
+          if(!confirm('Accession "'+accNo+'" is already used by "'+otherTitle+'". Save anyway?')) return;
+        }
+        proceed();
+      }).catch(function(){
+        saveBtn.disabled = false;
+        proceed(); // best-effort check only — don't block saving if the check itself fails (e.g. offline)
+      });
+    }}, [existing ? 'Save changes' : 'Add to catalog']);
+    actions.appendChild(saveBtn);
+    modal.appendChild(actions);
+
+    backdrop.appendChild(modal);
+    root.appendChild(backdrop);
+    titleInp.focus();
+  }
+  function closeModal(){ addBookModalOpen=false; editBookId=null; renderApp(); }
+
+  function saveBook(id, data, existing){
+    if(!db) return;
+    const promise = id
+      ? db.collection('books').doc(id).set(data, {merge:true})
+      : (function(){ data.addedAt = firebase.firestore.FieldValue.serverTimestamp(); return db.collection('books').add(data); })();
+    promise.catch(function(err){
+      showToast('Could not save the book: ' + (err.message||'unknown error'), true);
+    });
+  }
+  function deleteBook(id){
+    if(!db) return;
+    db.collection('books').doc(id).set({deleted:true, updatedAt: firebase.firestore.FieldValue.serverTimestamp()}, {merge:true})
+      .then(function(){ showToast('Book removed.'); })
+      .catch(function(err){ showToast('Could not remove the book: ' + (err.message||'unknown error'), true); });
+  }
+  function restoreBook(id){
+    if(!db) return;
+    db.collection('books').doc(id).set({deleted:false, updatedAt: firebase.firestore.FieldValue.serverTimestamp()}, {merge:true})
+      .then(function(){ showToast('Book restored.'); })
+      .catch(function(err){ showToast('Could not restore the book: ' + (err.message||'unknown error'), true); });
+  }
+
+  function renderDeletedModal(){
+    const close = function(){ deletedModalOpen=false; renderApp(); };
+    const backdrop = el('div', {class:'modal-backdrop', onclick:function(e){ if(e.target===backdrop) close(); }});
+    const modal = el('div', {class:'modal', style:'max-width:600px;'});
+    modal.appendChild(el('h3', null, ['Deleted books']));
+    const deleted = books.filter(function(b){ return b.deleted; })
+      .sort(function(a,b){ return compareAccession(a.accessionNo,b.accessionNo); });
+
+    if(deleted.length===0){
+      modal.appendChild(el('div', {class:'empty-state', style:'padding:30px 10px;'}, ['Nothing here.']));
+    } else {
+      modal.appendChild(el('p', {class:'hint'}, ['Removed books stay recoverable — nothing is permanently deleted from here.']));
+      const list = el('div', {class:'table-card'});
+      deleted.forEach(function(b){
+        const row = el('div', {class:'user-row'});
+        const left = el('div');
+        left.appendChild(el('div', {class:'book-title'}, [(b.accessionNo?b.accessionNo+' · ':'')+(b.title||'Untitled')]));
+        left.appendChild(el('div', {class:'book-meta'}, [b.author||'']));
+        row.appendChild(left);
+        row.appendChild(el('button', {class:'btn-outline btn-small', onclick:function(){ restoreBook(b.id); }}, ['Restore']));
+        list.appendChild(row);
+      });
+      modal.appendChild(list);
+    }
+
+    modal.appendChild(el('div', {class:'form-actions'}, [
+      el('button', {class:'btn-outline', style:'flex:1', onclick:close}, ['Close'])
+    ]));
+    backdrop.appendChild(modal);
+    root.appendChild(backdrop);
+  }
+
+
+
+
+
+  // ============================================================
+  // IMPORT FROM SPREADSHEET (xlsx / csv)
+  // ============================================================
+  const IMPORT_FIELDS = [
+    {key:'', label:'— Ignore this column —'},
+    {key:'title', label:'Title'},
+    {key:'author', label:'Author'},
+    {key:'accessionNo', label:'Accession / register no.'},
+    {key:'pages', label:'Pages'},
+    {key:'year', label:'Year'},
+    {key:'publisher', label:'Publisher'},
+    {key:'isbn', label:'ISBN'}
+  ];
+
+  let importFileRows=null;   // array of arrays, row 0 = header
+  let importMapping=null;    // array parallel to header columns -> field key
+  let importCategory='';
+  let importFileName='';
+  let importUploading=false;
+  let importResult=null;     // {count} once done
+
+  function guessColumnMapping(header, sampleValue){
+    const h = String(header||'').toLowerCase();
+    if(h.indexOf('గ్రంధ')>-1 || h.indexOf('పుస్తక')>-1 || h.indexOf('title')>-1) return 'title';
+    if(h.indexOf('రచయిత')>-1 || h.indexOf('author')>-1) return 'author';
+    if(h.indexOf('పేజీ')>-1 || h.indexOf('page')>-1) return 'pages';
+    if(h.indexOf('సంవత్సర')>-1 || h.indexOf('year')>-1) return 'year';
+    if(h.indexOf('ప్రచురణకర్త')>-1 || h.indexOf('publisher')>-1) return 'publisher';
+    if(h.indexOf('isbn')>-1) return 'isbn';
+    if(h.indexOf('క్రమ')>-1 || h.indexOf('సంఖ్య')>-1){
+      const sv = String(sampleValue||'').trim();
+      if(sv && /[A-Za-z]/.test(sv)) return 'accessionNo'; // alphanumeric id like "A 01" — a real accession no
+      return ''; // plain running serial number — not useful as an id, ignore by default
+    }
+    return '';
+  }
+
+  function resetImportState(){
+    importFileRows=null; importMapping=null; importCategory=''; importFileName=''; importUploading=false; importResult=null;
+  }
+
+  function renderImportModal(){
+    const closeImport = function(){ importModalOpen=false; resetImportState(); renderApp(); };
+    const backdrop = el('div', {class:'modal-backdrop', onclick:function(e){ if(e.target===backdrop && !importUploading) closeImport(); }});
+    const modal = el('div', {class:'modal', style:'max-width:640px;'});
+    modal.appendChild(el('h3', null, ['Import spreadsheet']));
+
+    if(importResult){
+      modal.appendChild(el('div', {class:'ok-msg'}, ['Added ' + importResult.count + ' book' + (importResult.count===1?'':'s') + ' to the catalog under "' + importCategory + '".']));
+      modal.appendChild(el('div', {class:'form-actions'}, [
+        el('button', {class:'btn-primary', style:'flex:1', onclick:closeImport}, ['Done'])
+      ]));
+      backdrop.appendChild(modal);
+      root.appendChild(backdrop);
+      return;
+    }
+
+    if(!importFileRows){
+      modal.appendChild(el('p', {class:'hint'}, ['Upload an Excel (.xlsx) or CSV file exported from their register. The first row should be column headers — you\u2019ll confirm what each column means on the next step before anything is saved.']));
+
+      modal.appendChild(el('label', null, ['Which collection does this file belong to? *']));
+      const catSel = el('select');
+      catSel.appendChild(el('option', {value:''}, ['— Select category —']));
+      CATEGORIES.forEach(function(c){ catSel.appendChild(el('option', {value:c}, [c])); });
+      catSel.addEventListener('change', function(e){ importCategory = e.target.value; });
+      modal.appendChild(catSel);
+
+      modal.appendChild(el('label', null, ['File']));
+      const fileInp = el('input', {type:'file', accept:'.xlsx,.xls,.csv'});
+      const errHolder = el('div');
+      fileInp.addEventListener('change', function(e){
+        errHolder.innerHTML='';
+        if(!importCategory){
+          errHolder.innerHTML=''; errHolder.appendChild(el('div',{class:'error-msg'},['Pick a category first.']));
+          fileInp.value='';
+          return;
+        }
+        const file = e.target.files[0];
+        if(!file) return;
+        importFileName = file.name;
+        const reader = new FileReader();
+        reader.onload = function(ev){
+          try{
+            const data = new Uint8Array(ev.target.result);
+            const wb = XLSX.read(data, {type:'array'});
+            const ws = wb.Sheets[wb.SheetNames[0]];
+            const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''}).filter(function(r){
+              return r.some(function(cell){ return String(cell).trim()!==''; });
+            });
+            if(rows.length<2){
+              errHolder.innerHTML=''; errHolder.appendChild(el('div',{class:'error-msg'},['That file has no data rows below the header.']));
+              return;
+            }
+            importFileRows = rows;
+            importMapping = rows[0].map(function(h, i){ return guessColumnMapping(h, rows[1] ? rows[1][i] : ''); });
+            renderApp();
+          }catch(err){
+            errHolder.innerHTML=''; errHolder.appendChild(el('div',{class:'error-msg'},['Could not read that file: ' + (err.message||'unknown error')]));
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      });
+      modal.appendChild(fileInp);
+      modal.appendChild(errHolder);
+
+      modal.appendChild(el('div', {class:'form-actions'}, [
+        el('button', {class:'btn-outline', style:'flex:1', onclick:closeImport}, ['Cancel'])
+      ]));
+      backdrop.appendChild(modal);
+      root.appendChild(backdrop);
+      return;
+    }
+
+    // --- Step 2: mapping + preview ---
+    const header = importFileRows[0];
+    const dataRows = importFileRows.slice(1);
+    modal.appendChild(el('p', {class:'hint'}, [importFileName + ' — ' + dataRows.length + ' row' + (dataRows.length===1?'':'s') + ' found, importing into "' + importCategory + '". Check the column mapping below before uploading.']));
+
+    const mapTable = el('table');
+    const mapThead = el('thead'); const mapHr = el('tr');
+    ['Column in file','Sample value','Maps to'].forEach(function(h){ mapHr.appendChild(el('th', null, [h])); });
+    mapThead.appendChild(mapHr); mapTable.appendChild(mapThead);
+    const mapTbody = el('tbody');
+    header.forEach(function(h, idx){
+      const tr = el('tr');
+      tr.appendChild(el('td', null, [String(h||'(blank)')]));
+      tr.appendChild(el('td', null, [el('span',{style:'color:var(--ink-soft); font-size:12px;'},[String(dataRows[0] ? dataRows[0][idx] : '')])]));
+      const sel = el('select', {style:'font-size:12.5px; padding:6px 8px;'});
+      IMPORT_FIELDS.forEach(function(f){
+        const opt = el('option', {value:f.key}, [f.label]);
+        if(importMapping[idx]===f.key) opt.selected = true;
+        sel.appendChild(opt);
+      });
+      sel.addEventListener('change', function(e){ importMapping[idx]=e.target.value; renderApp(); });
+      const tdSel = el('td'); tdSel.appendChild(sel);
+      tr.appendChild(tdSel);
+      mapTbody.appendChild(tr);
+    });
+    mapTable.appendChild(mapTbody);
+    const mapCard = el('div', {class:'table-card', style:'margin:14px 0;'});
+    mapCard.appendChild(mapTable);
+    modal.appendChild(mapCard);
+
+    const hasTitle = importMapping.indexOf('title') > -1;
+    if(!hasTitle){
+      modal.appendChild(el('div', {class:'error-msg'}, ['At least one column must map to "Title" before importing.']));
+    }
+
+    const titleIdx = importMapping.indexOf('title');
+    const accIdx = importMapping.indexOf('accessionNo');
+    const missingTitleRows = [];
+    const accCounts = {};
+    dataRows.forEach(function(row, i){
+      const t = titleIdx>-1 ? String(row[titleIdx]||'').trim() : '';
+      if(!t) missingTitleRows.push(i+1);
+      if(accIdx>-1){
+        const acc = String(row[accIdx]||'').trim();
+        if(acc) accCounts[acc] = (accCounts[acc]||0)+1;
+      }
+    });
+    const duplicateAccs = Object.keys(accCounts).filter(function(k){ return accCounts[k]>1; });
+    const validCount = dataRows.length - missingTitleRows.length;
+
+    modal.appendChild(el('p', {class:'hint'}, [validCount + ' of ' + dataRows.length + ' rows have a title and will be imported. Every book is added with 1 total / 1 available copy — adjust individual counts afterward if needed.']));
+
+    if(missingTitleRows.length>0){
+      modal.appendChild(el('div', {class:'error-msg'}, [
+        missingTitleRows.length + ' row' + (missingTitleRows.length===1?'':'s') + ' will be skipped — no title (row' + (missingTitleRows.length===1?'':'s') + ' ' + missingTitleRows.slice(0,12).join(', ') + (missingTitleRows.length>12?', …':'') + ').'
+      ]));
+    }
+    if(duplicateAccs.length>0){
+      modal.appendChild(el('div', {class:'error-msg'}, [
+        duplicateAccs.length + ' accession number' + (duplicateAccs.length===1?'':'s') + ' repeated within this file: ' + duplicateAccs.slice(0,12).join(', ') + (duplicateAccs.length>12?', …':'') + '. These will still import — worth checking for duplicate rows before uploading.'
+      ]));
+    }
+
+    const progressHolder = el('div');
+    modal.appendChild(progressHolder);
+
+    const actions = el('div', {class:'form-actions'});
+    actions.appendChild(el('button', {class:'btn-outline', disabled: importUploading, onclick:function(){ importFileRows=null; importMapping=null; renderApp(); }}, ['\u2190 Choose a different file']));
+    const uploadBtn = el('button', {class:'btn-primary', style:'flex:1', disabled: !hasTitle || importUploading || validCount===0, onclick:function(){
+      importUploading = true;
+      progressHolder.innerHTML='';
+      progressHolder.appendChild(el('div', {class:'ok-msg'}, ['Uploading…']));
+      uploadImportedBooks(dataRows, header, importMapping, importCategory, importFileName, function(done, total){
+        progressHolder.innerHTML='';
+        progressHolder.appendChild(el('div', {class:'ok-msg'}, ['Uploading ' + done + ' of ' + total + '…']));
+      }).then(function(res){
+        importUploading = false;
+        importResult = res;
+        renderApp();
+      }).catch(function(err){
+        importUploading = false;
+        progressHolder.innerHTML='';
+        progressHolder.appendChild(el('div', {class:'error-msg'}, ['Import failed: ' + (err.message||'unknown error')]));
+      });
+    }}, [importUploading ? 'Uploading…' : ('Import ' + validCount + ' book' + (validCount===1?'':'s'))]);
+    actions.appendChild(uploadBtn);
+    modal.appendChild(actions);
+
+    backdrop.appendChild(modal);
+    root.appendChild(backdrop);
+  }
+
+  function uploadImportedBooks(dataRows, header, mapping, category, filename, onProgress){
+    const colFor = {};
+    mapping.forEach(function(field, idx){ if(field) colFor[field]=idx; });
+
+    const rows = dataRows.map(function(row){
+      if(colFor.title==null) return null;
+      const title = String(row[colFor.title]||'').trim();
+      if(!title) return null;
+      const get = function(key){ return colFor[key]!=null ? String(row[colFor[key]]||'').trim() : ''; };
+      return {
+        title: title,
+        author: get('author'),
+        accessionNo: get('accessionNo'),
+        pages: get('pages'),
+        year: get('year'),
+        publisher: get('publisher'),
+        isbn: get('isbn'),
+        category: category,
+        copiesTotal: 1,
+        copiesAvailable: 1,
+        deleted: false,
+        importedFrom: filename,
+        addedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+    }).filter(Boolean);
+
+    const CHUNK = 400;
+    const chunks = [];
+    for(let i=0;i<rows.length;i+=CHUNK) chunks.push(rows.slice(i, i+CHUNK));
+
+    let uploaded = 0;
+    function next(i){
+      if(i>=chunks.length){ return Promise.resolve({count: uploaded}); }
+      const batch = db.batch();
+      chunks[i].forEach(function(rowData){
+        batch.set(db.collection('books').doc(), rowData);
+      });
+      return batch.commit().then(function(){
+        uploaded += chunks[i].length;
+        if(onProgress) onProgress(uploaded, rows.length);
+        return next(i+1);
+      });
+    }
+    return next(0);
+  }
+
+  // ============================================================
+  // BORROWING REGISTER
+  // ============================================================
+  function todayStr(){
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+  function normalizeMobile(m){
+    let digits = String(m||'').replace(/\D/g,'');
+    if(digits.length>10) digits = digits.slice(-10); // strip country code like +91
+    return digits;
+  }
+  function isValidMobile(m){
+    return /^[0-9]{10}$/.test(normalizeMobile(m));
+  }
+  // Date strings are 'YYYY-MM-DD', which compare correctly with plain string comparison.
+  function isValidBorrowDate(dateStr){
+    return !!dateStr && dateStr <= todayStr();
+  }
+  function isValidReturnDate(dateStr, borrowDateStr){
+    return !!dateStr && dateStr <= todayStr() && (!borrowDateStr || dateStr >= borrowDateStr);
+  }
+  function fmtDateStr(s){
+    if(!s) return '—';
+    const parts = String(s).split('-');
+    if(parts.length!==3) return s;
+    const d = new Date(Number(parts[0]), Number(parts[1])-1, Number(parts[2]));
+    return d.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'});
+  }
+  function daysBetween(startStr){
+    if(!startStr) return '—';
+    const parts = startStr.split('-');
+    const start = new Date(Number(parts[0]), Number(parts[1])-1, Number(parts[2]));
+    const diff = Math.round((new Date().setHours(0,0,0,0) - start.setHours(0,0,0,0)) / 86400000);
+    return diff + (diff===1?' day':' days');
+  }
+
+  function buildRegisterView(){
+    const container = el('div');
+
+    // --- Currently out overview ---
+    const outLoans = loans.filter(function(l){ return l.status==='out'; })
+      .sort(function(a,b){ return (b.borrowDate||'').localeCompare(a.borrowDate||''); });
+
+    const outCard = el('div', {class:'table-card', style:'margin-bottom:24px;'});
+    outCard.appendChild(el('div', {class:'register-head'}, ['Currently out (' + outLoans.length + ')']));
+    if(outLoans.length===0){
+      outCard.appendChild(el('div', {class:'empty-state', style:'padding:36px 20px;'}, ['Nothing currently checked out.']));
+    } else {
+      const table = el('table');
+      const thead = el('thead'); const hr = el('tr');
+      ['Book','Borrower','Mobile','Borrowed on','Out for',''].forEach(function(h){ hr.appendChild(el('th', null, [h])); });
+      thead.appendChild(hr); table.appendChild(thead);
+      const tbody = el('tbody');
+      outLoans.forEach(function(l){
+        const tr = el('tr');
+        tr.appendChild(el('td', {'data-label':'Book'}, [el('span',{class:'book-title'},[l.bookTitle||'—'])]));
+        tr.appendChild(el('td', {'data-label':'Borrower'}, [l.borrowerName||'—']));
+        tr.appendChild(el('td', {'data-label':'Mobile'}, [el('span',{style:'font-family:var(--mono); font-size:12px;'},[l.borrowerMobile||'—'])]));
+        tr.appendChild(el('td', {'data-label':'Borrowed on'}, [fmtDateStr(l.borrowDate)]));
+        tr.appendChild(el('td', {'data-label':'Out for'}, [daysBetween(l.borrowDate)]));
+        const actionCell = el('td', {'data-label':'', class:'no-print'});
+        if(currentRole==='admin'){
+          actionCell.appendChild(el('button', {class:'btn-outline btn-small', onclick:function(){ returnModalLoanId=l.id; renderApp(); }}, ['Mark returned']));
+        }
+        tr.appendChild(actionCell);
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      outCard.appendChild(table);
+    }
+    container.appendChild(outCard);
+
+    // --- Look up a book ---
+    const lookupCard = el('div', {class:'table-card'});
+    lookupCard.appendChild(el('div', {class:'register-head'}, ['Look up a book']));
+    const searchWrap = el('div', {style:'padding:14px 16px; border-bottom:1px solid var(--line);'});
+    const searchBox = el('div', {class:'search-box'});
+    searchBox.appendChild(el('input', {type:'text', placeholder:'Search by acc. no. — or title/author (Telugu or English)…', value:registerSearch, oninput:function(e){ registerSearch=e.target.value; selectedBookId=null; renderViewOnly(); }}));
+    searchWrap.appendChild(searchBox);
+    lookupCard.appendChild(searchWrap);
+
+    const term = registerSearch.trim();
+    const matches = term ? sortAndFilterBooks(books.filter(function(b){ return !b.deleted; }), term).slice(0,8) : [];
+
+    if(term && matches.length>0 && !selectedBookId){
+      const resultsHolder = el('div');
+      matches.forEach(function(b){
+        const row = el('div', {class:'user-row', style:'cursor:pointer;', onclick:function(){ selectedBookId=b.id; renderViewOnly(); }});
+        const left = el('div');
+        left.appendChild(el('div', {class:'book-title'}, [(b.accessionNo ? b.accessionNo+' · ' : '') + (b.title || 'Untitled')]));
+        left.appendChild(el('div', {class:'book-meta'}, [b.author || '']));
+        row.appendChild(left);
+        const avail = Number(b.copiesAvailable!=null?b.copiesAvailable:b.copiesTotal||0);
+        row.appendChild(el('span', {class:'badge '+(avail>0?'badge-avail':'badge-out')}, [avail+' available']));
+        resultsHolder.appendChild(row);
+      });
+      lookupCard.appendChild(resultsHolder);
+    } else if(term && matches.length===0){
+      lookupCard.appendChild(el('div', {class:'empty-state', style:'padding:30px 20px;'}, ['No books match that search.']));
+    }
+
+    if(selectedBookId){
+      const book = books.find(function(b){ return b.id===selectedBookId; });
+      if(book){
+        const detail = el('div', {style:'padding:18px 16px; border-top:1px solid var(--line);'});
+        const detailHead = el('div', {style:'display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:14px;'});
+        const titleBlock = el('div');
+        titleBlock.appendChild(el('div', {class:'book-title', style:'font-size:16px;'}, [book.title]));
+        titleBlock.appendChild(el('div', {class:'book-meta'}, [[book.author, book.category, book.accessionNo ? ('Acc. '+book.accessionNo) : '', book.pages ? (book.pages+' pp') : ''].filter(Boolean).join(' · ')]));
+        detailHead.appendChild(titleBlock);
+
+        const avail = Number(book.copiesAvailable!=null?book.copiesAvailable:book.copiesTotal||0);
+        const total = Number(book.copiesTotal||0);
+        const rightBlock = el('div', {style:'display:flex; align-items:center; gap:10px;'});
+        rightBlock.appendChild(el('span', {class:'badge '+(avail>0?'badge-avail':'badge-out')}, [avail+' / '+total+' available']));
+        if(currentRole==='admin'){
+          rightBlock.appendChild(el('button', {class:'btn-primary btn-small', disabled: avail<=0, onclick:function(){ borrowModalBookId=book.id; renderApp(); }}, ['Borrow a copy']));
+        }
+        rightBlock.appendChild(el('button', {class:'btn-outline btn-small', onclick:function(){ selectedBookId=null; renderViewOnly(); }}, ['Clear']));
+        detailHead.appendChild(rightBlock);
+        detail.appendChild(detailHead);
+
+        const history = loans.filter(function(l){ return l.bookId===book.id; })
+          .sort(function(a,b){ return (b.borrowDate||'').localeCompare(a.borrowDate||''); });
+
+        if(history.length>0){
+          const currentlyOut = history.some(function(l){ return l.status==='out'; });
+          detail.appendChild(el('div', {style:'font-size:12.5px; color:var(--ink-soft); margin-bottom:10px;'}, [
+            'Borrowed ' + history.length + ' time' + (history.length===1?'':'s') + (currentlyOut ? ' · currently out' : ' · currently in')
+          ]));
+        }
+
+        detail.appendChild(el('div', {style:'font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--ink-soft); margin:6px 0 8px;'}, ['Borrowing history']));
+        if(history.length===0){
+          detail.appendChild(el('div', {style:'color:var(--ink-soft); font-size:13px; padding:8px 0;'}, ['No borrowing history for this book yet.']));
+        } else {
+          const htable = el('table');
+          const hthead = el('thead'); const hr2 = el('tr');
+          ['Borrower','Mobile','Borrowed','Returned','Returned by','Status'].forEach(function(h){ hr2.appendChild(el('th', null, [h])); });
+          hthead.appendChild(hr2); htable.appendChild(hthead);
+          const htbody = el('tbody');
+          history.forEach(function(l){
+            const tr = el('tr');
+            tr.appendChild(el('td', {'data-label':'Borrower'}, [l.borrowerName||'—']));
+            tr.appendChild(el('td', {'data-label':'Mobile'}, [el('span',{style:'font-family:var(--mono); font-size:12px;'},[l.borrowerMobile||'—'])]));
+            tr.appendChild(el('td', {'data-label':'Borrowed'}, [fmtDateStr(l.borrowDate)]));
+            tr.appendChild(el('td', {'data-label':'Returned'}, [l.returnDate ? fmtDateStr(l.returnDate) : '—']));
+            let returnedByText = '—';
+            if(l.status==='returned'){
+              returnedByText = l.sameAsBorrower ? 'Same as borrower' : (l.returnerName||'—');
+            }
+            tr.appendChild(el('td', {'data-label':'Returned by'}, [returnedByText]));
+            tr.appendChild(el('td', {'data-label':'Status'}, [el('span', {class:'badge '+(l.status==='out'?'badge-out':'badge-avail')}, [l.status==='out'?'Out':'Returned'])]));
+            htbody.appendChild(tr);
+          });
+          htable.appendChild(htbody);
+          detail.appendChild(htable);
+        }
+        lookupCard.appendChild(detail);
+      }
+    }
+
+    container.appendChild(lookupCard);
+    return container;
+  }
+
+  // ---------------- borrow modal ----------------
+  function renderBorrowModal(){
+    const book = books.find(function(b){ return b.id===borrowModalBookId; });
+    if(!book){ borrowModalBookId=null; return; }
+    const closeBorrow = function(){ borrowModalBookId=null; renderApp(); };
+
+    const backdrop = el('div', {class:'modal-backdrop', onclick:function(e){ if(e.target===backdrop) closeBorrow(); }});
+    const modal = el('div', {class:'modal'});
+    modal.appendChild(el('h3', null, ['Borrow: ' + book.title]));
+
+    const avail = Number(book.copiesAvailable!=null?book.copiesAvailable:book.copiesTotal||0);
+    modal.appendChild(el('p', {class:'hint'}, [avail + ' of ' + (book.copiesTotal||0) + ' copies available.']));
+
+    const nameInp = el('input', {type:'text', placeholder:'Full name'});
+    const mobileInp = el('input', {type:'tel', placeholder:'10-digit mobile number'});
+    const dateInp = el('input', {type:'date', value: todayStr()});
+
+    modal.appendChild(el('label', null, ['Borrower name']));
+    modal.appendChild(nameInp);
+    modal.appendChild(el('label', null, ['Borrower mobile number']));
+    modal.appendChild(mobileInp);
+    modal.appendChild(el('label', null, ['Date of borrowing']));
+    modal.appendChild(dateInp);
+
+    const errHolder = el('div');
+    modal.appendChild(errHolder);
+
+    const actions = el('div', {class:'form-actions'});
+    actions.appendChild(el('button', {class:'btn-outline', onclick:closeBorrow}, ['Cancel']));
+    const submitBtn = el('button', {class:'btn-primary', style:'flex:1', disabled: avail<=0, onclick:function(){
+      errHolder.innerHTML='';
+      const name = nameInp.value.trim(), mobile = mobileInp.value.trim(), date = dateInp.value;
+      if(!name || !mobile || !date){
+        errHolder.appendChild(el('div',{class:'error-msg'},['Name, mobile number and date are all required.']));
+        return;
+      }
+      if(!isValidMobile(mobile)){
+        errHolder.appendChild(el('div',{class:'error-msg'},['Enter a valid 10-digit mobile number.']));
+        return;
+      }
+      if(!isValidBorrowDate(date)){
+        errHolder.appendChild(el('div',{class:'error-msg'},['Borrowing date can\u2019t be in the future.']));
+        return;
+      }
+      submitBtn.disabled = true;
+      borrowBook(book, name, normalizeMobile(mobile), date).then(function(){
+        showToast('Borrowing recorded.');
+        closeBorrow();
+      }).catch(function(err){
+        submitBtn.disabled = false;
+        errHolder.innerHTML='';
+        errHolder.appendChild(el('div',{class:'error-msg'},[err.message || 'Could not record the loan.']));
+      });
+    }}, ['Record borrowing']);
+    actions.appendChild(submitBtn);
+    modal.appendChild(actions);
+
+    backdrop.appendChild(modal);
+    root.appendChild(backdrop);
+    nameInp.focus();
+  }
+
+  function borrowBook(book, name, mobile, date){
+    const bookRef = db.collection('books').doc(book.id);
+    const loanRef = db.collection('loans').doc();
+    return db.runTransaction(function(tx){
+      return tx.get(bookRef).then(function(doc){
+        if(!doc.exists) throw new Error('That book no longer exists.');
+        const avail = Number(doc.data().copiesAvailable!=null ? doc.data().copiesAvailable : doc.data().copiesTotal||0);
+        if(avail<=0) throw new Error('No copies available to borrow.');
+        tx.update(bookRef, {copiesAvailable: avail-1, updatedAt: firebase.firestore.FieldValue.serverTimestamp()});
+        tx.set(loanRef, {
+          bookId: book.id,
+          bookTitle: book.title,
+          borrowerName: name,
+          borrowerMobile: mobile,
+          borrowDate: date,
+          returnDate: null,
+          returnerName: null,
+          returnerMobile: null,
+          status: 'out',
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          createdBy: currentUser.uid
+        });
+      });
+    });
+  }
+
+  // ---------------- return modal ----------------
+  function renderReturnModal(){
+    const loan = loans.find(function(l){ return l.id===returnModalLoanId; });
+    if(!loan){ returnModalLoanId=null; return; }
+    const closeReturn = function(){ returnModalLoanId=null; renderApp(); };
+
+    const backdrop = el('div', {class:'modal-backdrop', onclick:function(e){ if(e.target===backdrop) closeReturn(); }});
+    const modal = el('div', {class:'modal'});
+    modal.appendChild(el('h3', null, ['Return: ' + loan.bookTitle]));
+    modal.appendChild(el('p', {class:'hint'}, ['Borrowed by ' + loan.borrowerName + ' (' + loan.borrowerMobile + ') on ' + fmtDateStr(loan.borrowDate) + '.']));
+
+    const dateInp = el('input', {type:'date', value: todayStr()});
+    modal.appendChild(el('label', null, ['Date of return']));
+    modal.appendChild(dateInp);
+
+    const sameWrap = el('label', {style:'display:flex; align-items:center; gap:8px; text-transform:none; font-weight:500; letter-spacing:0; font-size:13px; color:var(--ink); margin-top:16px;'});
+    const sameCheck = el('input', {type:'checkbox', style:'width:auto;'});
+    sameWrap.appendChild(sameCheck);
+    sameWrap.appendChild(document.createTextNode('Same person is returning it'));
+    modal.appendChild(sameWrap);
+
+    const returnerNameInp = el('input', {type:'text', placeholder:'Full name'});
+    const returnerMobileInp = el('input', {type:'tel', placeholder:'10-digit mobile number'});
+    modal.appendChild(el('label', null, ['Returned by — name']));
+    modal.appendChild(returnerNameInp);
+    modal.appendChild(el('label', null, ['Returned by — mobile number']));
+    modal.appendChild(returnerMobileInp);
+
+    sameCheck.addEventListener('change', function(){
+      if(sameCheck.checked){
+        returnerNameInp.value = loan.borrowerName || '';
+        returnerMobileInp.value = loan.borrowerMobile || '';
+        returnerNameInp.disabled = true;
+        returnerMobileInp.disabled = true;
+      } else {
+        returnerNameInp.value = '';
+        returnerMobileInp.value = '';
+        returnerNameInp.disabled = false;
+        returnerMobileInp.disabled = false;
+      }
+    });
+
+    const errHolder = el('div');
+    modal.appendChild(errHolder);
+
+    const actions = el('div', {class:'form-actions'});
+    actions.appendChild(el('button', {class:'btn-outline', onclick:closeReturn}, ['Cancel']));
+    const submitBtn = el('button', {class:'btn-primary', style:'flex:1', onclick:function(){
+      errHolder.innerHTML='';
+      const date = dateInp.value;
+      const rName = returnerNameInp.value.trim(), rMobile = returnerMobileInp.value.trim();
+      if(!date || !rName || !rMobile){
+        errHolder.appendChild(el('div',{class:'error-msg'},['Return date, and the returning person\u2019s name and mobile number, are all required.']));
+        return;
+      }
+      if(!isValidMobile(rMobile)){
+        errHolder.appendChild(el('div',{class:'error-msg'},['Enter a valid 10-digit mobile number.']));
+        return;
+      }
+      if(!isValidReturnDate(date, loan.borrowDate)){
+        errHolder.appendChild(el('div',{class:'error-msg'},['Return date can\u2019t be before the borrowing date or in the future.']));
+        return;
+      }
+      submitBtn.disabled = true;
+      returnBook(loan, date, rName, normalizeMobile(rMobile), sameCheck.checked).then(function(){
+        showToast('Return recorded.');
+        closeReturn();
+      }).catch(function(err){
+        submitBtn.disabled = false;
+        errHolder.innerHTML='';
+        errHolder.appendChild(el('div',{class:'error-msg'},[err.message || 'Could not record the return.']));
+      });
+    }}, ['Record return']);
+    actions.appendChild(submitBtn);
+    modal.appendChild(actions);
+
+    backdrop.appendChild(modal);
+    root.appendChild(backdrop);
+  }
+
+  function returnBook(loan, returnDate, returnerName, returnerMobile, sameAsBorrower){
+    const bookRef = db.collection('books').doc(loan.bookId);
+    const loanRef = db.collection('loans').doc(loan.id);
+    return db.runTransaction(function(tx){
+      return tx.get(bookRef).then(function(doc){
+        const data = doc.exists ? doc.data() : {copiesAvailable:0, copiesTotal:0};
+        const total = Number(data.copiesTotal||0);
+        const avail = Number(data.copiesAvailable||0);
+        const newAvail = total>0 ? Math.min(avail+1, total) : avail+1;
+        if(doc.exists){
+          tx.update(bookRef, {copiesAvailable:newAvail, updatedAt: firebase.firestore.FieldValue.serverTimestamp()});
+        }
+        tx.update(loanRef, {
+          status:'returned',
+          returnDate: returnDate,
+          returnerName: returnerName,
+          returnerMobile: returnerMobile,
+          sameAsBorrower: !!sameAsBorrower,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      });
+    });
+  }
+
+  // ============================================================
+  // USERS MODAL (admin: create logins, set roles)
+  // ============================================================
+  let userList=[];
+  function renderUsersModal(){
+    const backdrop = el('div', {class:'modal-backdrop', onclick:function(e){ if(e.target===backdrop){ usersModalOpen=false; renderApp(); } }});
+    const modal = el('div', {class:'modal'});
+    modal.appendChild(el('h3', null, ['Manage logins']));
+    modal.appendChild(el('p', {class:'hint'}, ['Create a login for library staff. Admins can add/edit/remove books and manage logins. Read-only logins can search, view and print the catalog.']));
+
+    const nameInp = el('input', {type:'text', placeholder:'Full name'});
+    const emailInp = el('input', {type:'email', placeholder:'staff@example.com'});
+    const passInp = el('input', {type:'text', placeholder:'Temporary password (min 6 characters)'});
+    const roleSel = el('select');
+    roleSel.appendChild(el('option', {value:'readonly'}, ['Read-only']));
+    roleSel.appendChild(el('option', {value:'admin'}, ['Admin']));
+
+    modal.appendChild(el('label', null, ['Name']));
+    modal.appendChild(nameInp);
+    modal.appendChild(el('label', null, ['Email']));
+    modal.appendChild(emailInp);
+    modal.appendChild(el('label', null, ['Temporary password']));
+    modal.appendChild(passInp);
+    modal.appendChild(el('label', null, ['Role']));
+    modal.appendChild(roleSel);
+
+    const errHolder = el('div');
+    modal.appendChild(errHolder);
+
+    const createBtn = el('button', {class:'btn-primary', style:'margin-top:16px; width:100%;', onclick:function(){
+      errHolder.innerHTML='';
+      const name = nameInp.value.trim();
+      const email = emailInp.value.trim(), pass = passInp.value;
+      if(!name){
+        errHolder.appendChild(el('div',{class:'error-msg'},['Enter a name.']));
+        return;
+      }
+      if(!email || pass.length<6){
+        errHolder.appendChild(el('div',{class:'error-msg'},['Enter an email and a password of at least 6 characters.']));
+        return;
+      }
+      createBtn.disabled = true;
+      createLogin(name, email, pass, roleSel.value).then(function(){
+        usersModalOpen=false; renderApp();
+        showToast('Login created for ' + email + '.');
+      }).catch(function(err){
+        createBtn.disabled = false;
+        errHolder.innerHTML='';
+        errHolder.appendChild(el('div',{class:'error-msg'},[friendlyAuthError(err)]));
+      });
+    }}, ['Create login']);
+    modal.appendChild(createBtn);
+
+    modal.appendChild(el('div', {style:'border-top:1px solid var(--line); margin:22px 0 12px;'}));
+    modal.appendChild(el('label', null, ['Existing logins']));
+    const listHolder = el('div', {class:'table-card', style:'margin-top:6px;'});
+    listHolder.appendChild(el('div', {style:'padding:14px; color:var(--ink-soft); font-size:13px;'}, ['Loading…']));
+    modal.appendChild(listHolder);
+
+    const closeBtn = el('button', {class:'btn-outline', style:'margin-top:18px; width:100%;', onclick:function(){ usersModalOpen=false; renderApp(); }}, ['Close']);
+    modal.appendChild(closeBtn);
+
+    backdrop.appendChild(modal);
+    root.appendChild(backdrop);
+    emailInp.focus();
+
+    db.collection('roles').get().then(function(snap){
+      listHolder.innerHTML='';
+      if(snap.empty){
+        listHolder.appendChild(el('div', {style:'padding:14px; color:var(--ink-soft); font-size:13px;'}, ['No logins yet besides you.']));
+        return;
+      }
+      snap.forEach(function(doc){
+        const d = doc.data();
+        const row = el('div', {class:'user-row'});
+        row.appendChild(el('span', null, [(d.name ? d.name + ' — ' : '') + (d.email || doc.id)]));
+        row.appendChild(el('span', {class:'role-tag ' + (d.role==='admin'?'admin':'')}, [d.role || 'readonly']));
+        listHolder.appendChild(row);
+      });
+    }).catch(function(err){
+      listHolder.innerHTML='';
+      listHolder.appendChild(el('div', {style:'padding:14px; color:var(--ink-soft); font-size:13px;'}, ['Could not load logins (offline?).']));
+    });
+  }
+
+  function createLogin(name, email, pass, role){
+    const cfg = getConfig() || EMBEDDED_CONFIG;
+    if(!secondaryApp){
+      secondaryApp = firebase.apps.find(a=>a.name==='Secondary') || firebase.initializeApp(cfg, 'Secondary');
+    }
+    const secondaryAuth = secondaryApp.auth();
+    return secondaryAuth.createUserWithEmailAndPassword(email, pass).then(function(cred){
+      const uid = cred.user.uid;
+      return secondaryAuth.signOut().then(function(){
+        return db.collection('roles').doc(uid).set({
+          name: name,
+          email: email,
+          role: role,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          createdBy: currentUser.uid
+        });
+      });
+    });
+  }
+
+  // ============================================================
+  // BOOT / AUTH FLOW
+  // ============================================================
+  function subscribeBooks(){
+    if(unsubscribeBooks) unsubscribeBooks();
+    catalogLoading = false;
+    unsubscribeBooks = db.collection('books').onSnapshot(function(snap){
+      books = snap.docs.map(function(d){ return withRoman(Object.assign({id:d.id}, d.data())); });
+      netStatus = (snap.metadata.fromCache && !navigator.onLine) ? 'offline' : (navigator.onLine ? 'online' : 'offline');
+      if(document.getElementById('table-holder')){ renderTableOnly(); renderStatusOnly(); }
+    }, function(err){
+      console.error('books snapshot error', err);
+      showToast('Lost the connection to the catalog — it will retry automatically.', true);
+    });
+  }
+
+  function subscribeLoans(){
+    if(unsubscribeLoans) unsubscribeLoans();
+    unsubscribeLoans = db.collection('loans').onSnapshot(function(snap){
+      loans = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
+      if(currentView==='register' && document.getElementById('view-holder')) renderViewOnly();
+    }, function(err){
+      console.error('loans snapshot error', err);
+      showToast('Lost the connection to the borrowing register — it will retry automatically.', true);
+    });
+  }
+
+  let everSignedIn = false;
+
+  function boot(){
+    if(!auth){ renderSetup(); return; }
+    auth.onAuthStateChanged(function(user){
+      if(!user){
+        currentUser=null; currentRole=null; currentUserName=null;
+        if(unsubscribeBooks){ unsubscribeBooks(); unsubscribeBooks=null; }
+        if(unsubscribeLoans){ unsubscribeLoans(); unsubscribeLoans=null; }
+        if(everSignedIn){ enterGuestCatalog(); } else { renderLogin(); }
+        return;
+      }
+      everSignedIn = true;
+      currentUser = user;
+      netStatus = navigator.onLine ? 'online' : 'offline';
+
+      db.collection('roles').doc(user.uid).get().then(function(doc){
+        if(doc.exists){
+          const d = doc.data();
+          currentRole = d.role === 'admin' ? 'admin' : 'readonly';
+          currentUserName = d.name || null;
+          cacheRole(user.uid, currentRole);
+        } else {
+          currentRole = getCachedRole(user.uid) || 'readonly';
+        }
+        subscribeBooks();
+        subscribeLoans();
+        renderApp();
+      }).catch(function(){
+        currentRole = getCachedRole(user.uid) || 'readonly';
+        subscribeBooks();
+        subscribeLoans();
+        renderApp();
+      });
+    });
+  }
+
+  // Called by the "Sign in" button — this is the only thing that ever triggers
+  // loading the Firebase SDK or making a Firebase network call. Nothing before
+  // this point (public browsing) touches Firebase in any way.
+  function startSignIn(){
+    ensureFirebaseSDK().then(function(){
+      const activeConfig = getConfig() || EMBEDDED_CONFIG;
+      const ok = initFirebase(activeConfig);
+      if(!ok){
+        renderSetup(JSON.stringify(activeConfig, null, 2), 'Could not connect. Check the config and try again.');
+        return;
+      }
+      boot();
+    }).catch(function(){
+      showToast('Could not load sign-in — check your connection.', true);
+    });
+  }
+
+  // ---------------- entry point ----------------
+  // Default state: public catalog view, served entirely by the Python backend.
+  // No Firebase code loads and no Firebase calls happen until startSignIn() runs.
+  enterGuestCatalog();
+
+})();
+</script>
+</body>
+</html>
