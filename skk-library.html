@@ -422,7 +422,7 @@
     toastTimer = setTimeout(function(){ t.style.display='none'; }, 4000);
   }
 
-  function withRoman(b){ b._titleRoman = teluguToRoman(b.title); b._authorRoman = teluguToRoman(b.author); return b; }
+  function withRoman(b){ b._titleRoman = teluguToRoman(b.title); b._authorRoman = teluguToRoman(b.author); b._donorRoman = teluguToRoman(b.donor); return b; }
 
   // ---------------- utility ----------------
   function el(tag, attrs, children){
@@ -558,10 +558,11 @@
     if(accScore>0) return 1000 + accScore;
     const titleScore = fuzzyTeluguScore(query, book.title, book._titleRoman);
     const authorScore = fuzzyTeluguScore(query, book.author, book._authorRoman);
+    const donorScore = fuzzyTeluguScore(query, book.donor, book._donorRoman);
     const categoryText = (book.category||'') + (book.alsoUGC ? ' UGC' : '');
     const categoryScore = fuzzyFieldScore(query, categoryText);
     const isbnScore = fuzzyFieldScore(query, book.isbn);
-    return Math.max(titleScore, authorScore, categoryScore, isbnScore);
+    return Math.max(titleScore, authorScore, donorScore, categoryScore, isbnScore);
   }
 
   function sortAndFilterBooks(list, query){
@@ -573,6 +574,322 @@
       return compareAccession(x.book.accessionNo, y.book.accessionNo);
     });
     return scored.map(function(x){ return x.book; });
+  }
+
+  // ============================================================
+  // ENGLISH -> TELUGU PHONETIC INPUT (typing aid, not a search index)
+  // Rule-based, word-by-word (converts on space/blur). Good for everyday
+  // typing; irregular Sanskrit spellings (e.g. retroflex sounds) may need
+  // manual correction afterward — this isn't a dictionary-backed IME.
+  // ============================================================
+  // Telugu character-bigram frequencies, derived from the same 125k-word
+  // dictionary (not a separate/unverified source) — used to rank candidates
+  // by "how Telugu does this look", which helps even for names/titles that
+  // will never appear in any whole-word dictionary.
+  const TE_BIGRAM_PAIRS = [["ము",16541],["్ర",12293],["డు",11023],["ర్",10297],["ని",9912],["ట్",9181],["స్",9085],["ిన",9005],["్ట",8892],["క్",8863],["్య",8817],["న్",8586],["ిం",8383],["లు",8215],["ార",8204],["రి",7641],["త్",7194],["రు",7158],["ంచ",6830],["ను",6633],["కు",6610],["ప్",6594],["్ల",6478],["ిక",6460],["్త",6330],["గా",6219],["ుల",6168],["ుక",6095],["రా",5965],["్న",5851],["ది",5841],["వా",5820],["వి",5805],["ాడ",5785],["నా",5729],["చు",5432],["ుగ",5411],["ల్",5320],["ండ",5120],["ాన",5052],["కా",4970],["తి",4917],["చి",4912],["డ్",4905],["వు",4904],["ున",4871],["పు",4817],["డి",4781],["టి",4576],["ుట",4560],["్వ",4549],["ద్",4530],["టు",4527],["ుడ",4479],["లి",4376],["ైన",4301],["యి",4175],["దు",4019],["్ప",3986],["గు",3891],["్క",3884],["ాల",3876],["మా",3752],["చే",3666],["తు",3653],["ిత",3578],["కొ",3541],["్చ",3461],["ువ",3455],["్మ",3383],["ంద",3355],["ిప",3295],["సి",3263],["రమ",3209],["ిర",3170],["కి",3153],["ివ",3141],["ుర",3102],["ుం",3033],["పా",3016],["ిల",2943],["గ్",2938],["సు",2914],["ుప",2885],["లో",2872],["మై",2833],["యా",2804],["ంగ",2780],["పి",2684],["ాయ",2642],["ంత",2628],["ిగ",2624],["్డ",2617],["ియ",2612],["చ్",2588],["ాస",2577],["లా",2495],["మి",2485],["నద",2438],["ంట",2430],["ష్",2414],["రం",2408],["్ష",2403],["యమ",2375],["పో",2369],["ాం",2368],["పర",2366],["్స",2322],["వే",2295],["ావ",2256],["తా",2244],["పె",2214],["గి",2212],["ుత",2209],["ాక",2197],["వ్",2185],["మ్",2175],["ేస",2153],["కో",2109],["ెట",2103],["నమ",2088],["సం",2044],["లే",2021],["ిస",1995],["చె",1991],["ొన",1988],["ుచ",1966],["నం",1942],["ిద",1921],["కర",1897],["ిచ",1886],["ామ",1885],["ాట",1862],["సా",1852],["డమ",1848],["ిమ",1848],["వర",1840],["దా",1825],["య్",1790],["పడ",1786],["ెల",1741],["యం",1726],["్ద",1723],["కం",1714],["ాత",1711],["ుద",1694],["యు",1655],["ుమ",1654],["ూర",1647],["వల",1643],["బడ",1622],["నే",1606],["ాద",1600],["లక",1598],["కల",1596],["శ్",1544],["మం",1529],["ాగ",1529],["బ్",1496],["్థ",1489],["ెం",1487],["మన",1481],["ాప",1461],["గల",1450],["ంక",1397],["్ధ",1396],["తమ",1390],["జ్",1386],["ంప",1383],["నక",1380],["డా",1378],["వె",1355],["కమ",1349],["తో",1338],["ేవ",1333],["వం",1327],["తం",1296],["ేట",1290],["ేర",1289],["ొం",1286],["రో",1274],["దే",1272],["సమ",1267],["ేద",1266],["పట",1255],["ళ్",1246],["బా",1238],["కట",1231],["రవ",1225],["రక",1222],["లమ",1217],["ెర",1209],["రే",1198],["పొ",1193],["ిష",1178],["ధి",1175],["మర",1166],["రీ",1143],["నవ",1129],["ీర",1127],["హా",1124],["ాజ",1120],["నీ",1118],["రస",1116],["ిడ",1106],["భా",1095],["యె",1090],["్గ",1069],["సర",1063],["అన",1063],["ెన",1059],["బు",1053],["లం",1050],["శి",1050],["లన",1046],["డే",1033],["శా",1033],["ుస",1032],["ిట",1031],["జా",1024],["పం",1019],["టా",1010],["ేయ",1009],["తె",1009],["తర",1003],["ొట",1002],["రత",994],["చా",992],["లె",989],["ోయ",957],["మె",954],["ోగ",945],["యే",943],["తన",942],["లవ",933],["వమ",930],["ేన",927],["కూ",924],["అం",922],["ేశ",910],["దర",909],["ేత",901],["తీ",897],["ిశ",897],["ోక",896],["ెక",894],["ోర",877],["మే",876],["షి",866],["ేక",860],["ణమ",857],["హి",854],["గం",851],["పన",848],["ోవ",838],["యో",837],["తల",833],["ుబ",823],["ాధ",823],["ొక",822],["రె",818],["ెడ",815],["ూడ",815],["ోల",814],["డన",810],["్బ",803],["బం",801],["మో",801],["ోత",801],["ంబ",800],["గొ",798],["బి",792],["రణ",791],["ోన",789],["జి",782],["గో",773],["గమ",762],["పూ",758],["ీక",752],["కన",750],["మీ",750],["వడ",749],["మూ",748],["పే",739],["జు",736],["పక",736],["రూ",734],["ోస",734],["దం",732],["రప",730],["ీన",723],["పద",715],["గర",714],["్ణ",714],["ాణ",712],["టే",712],["తే",711],["నె",711],["ేల",708],["ంధ",701],["దన",697],["నప",696],["ోప",695],["ధ్",692],["ాహ",691],["పల",684],["ధా",678],["యక",675],["ణి",670],["ేష",670],["కప",666],["టమ",666],["తక",662],["ాళ",662],["ెయ",661],["ీల",661],["మొ",660],["రచ",658],["ాచ",655],["వచ",646],["సే",644],["దమ",642],["రగ",639],["ూల",639],["ోట",637],["టె",636],["ెప",634],["ణం",630],["జన",627],["ొల",626],["ొర",623],["గడ",622],["ృత",621],["బె",621],["ధమ",619],["ీయ",617],["డై",617],["్జ",617],["ొడ",616],["వొ",616],["డవ",614],["ూప",609],["ూట",609],["బో",605],["వన",594],["సన",588],["తగ",587],["ీస",586],["తప",585],["యన",578],["లప",569],["ుష",566],["ెద",566],["ిజ",566],["నన",561],["కే",559],["కడ",558],["డక",556],["మత",555],["ీద",553],["పత",551],["ెత",551],["ంజ",546],["ేమ",545],["వస",544],["నల",539],["వీ",538],["లై",536],["అర",534],["లస",530],["డల",529],["చక",528],["నూ",526],["ోడ",524],["కత",523],["టక",519],["లగ",517],["చర",516],["భి",516],["వై",510],["టర",510],["ాశ",509],["నర",508],["రహ",507],["కృ",506],["కవ",502],["ేప",502],["అప",502],["యవ",501],["్ళ",498],["ీవ",498],["ీత",498],["వత",497],["మక",497],["దీ",496],["మల",496],["మహ",494],["టం",491],["టప",489],["వక",488],["దో",488],["జీ",485],["తొ",485],["తూ",480],["అత",479],["యూ",479],["లల",477],["యత",476],["కై",472],["మమ",470],["రయ",468],["చన",466],["చూ",466],["ిబ",461],["నడ",461],["థి",457],["హ్",453],["టల",453],["ూత",450],["షన",450],["ంభ",448],["సె",446],["ాబ",446],["బల",444],["ుణ",444],["ళి",443],["ఉప",443],["పమ",438],["శు",438],["కె",435],["ేడ",430],["లీ",430],["నో",430],["కీ",427],["అల",427],["డె",425],["ఫ్",425],["అవ",424],["ోచ",422],["యల",418],["చల",417],["దూ",416],["తవ",413],["దొ",410],["చబ",409],["ోమ",407],["బొ",405],["్ఞ",404],["ుఖ",401],["ెమ",398],["ాష",398],["షమ",395],["బర",394],["ోద",394],["థా",391],["రద",391],["నట",388],["ణ్",387],["భ్",384],["చం",383],["అడ",383],["వద",382],["ంస",382],["రల",378],["లత",375],["మయ",374],["అస",374],["యప",373],["శమ",372],["టన",372],["దల",370],["యస",369],["యై",369],["షా",369],["హమ",366],["జం",365],["ెగ",362],["ొయ",362],["ైట",362],["రై",361],["ోష",361],["పై",360],["చడ",359],["చీ",359],["హర",358],["ృష",358],["ాభ",355],["్ఫ",355],["ీడ",354],["గత",350],["ిధ",349],["ఆర",347],["సూ",346],["గన",345],["ొద",345],["జర",345],["ధర",344],["్భ",344],["ోజ",343],["రొ",342],["సీ",341],["డగ",340],["పీ",340],["శం",339],["టట",338],["ధు",335],["నగ",334],["షణ",334],["ేం",331],["బద",326],["ొగ",326],["గూ",325],["ఆక",322],["నస",321],["టీ",321],["ేగ",320],["ీప",319],["ైర",319],["భూ",318],["ూక",318],["యర",318],["కస",316],["ళు",315],["ణా",315],["ఫా",313],["డద",312],["ెస",312],["సల",311],["సో",310],["అమ",309],["లయ",309],["హు",307],["రన",305],["ొమ",305],["డం",304],["వృ",304],["ఇం",304],["అగ",303],["ణు",301],["భవ",301],["ోహ",299],["దక",298],["ిహ",296],["శే",294],["ూచ",292],["అక",291],["శక",289],["ీమ",289],["అధ",286],["నై",284],["జల",281],["రబ",281],["ీట",281],["ూస",280],["ఖ్",279],["ోధ",278],["టో",277],["మస",276],["అద",276],["గే",275],["్ఠ",273],["్శ",273],["అభ",272],["ఉద",272],["నత",271],["లర",271],["యీ",270],["వూ",270],["మవ",268],["షు",267],["సహ",266],["యబ",265],["దె",265],["ఫి",265],["లబ",264],["పచ",263],["ైడ",263],["ఞా",262],["ొప",261],["్ఛ",260],["గద",259],["సై",259],["ుభ",259],["ుజ",258],["రజ",257],["ేజ",257],["మట",253],["ధన",253],["ెళ",253],["ిభ",252],["ైప",251],["హం",250],["ైల",249],["గవ",248],["ధం",247],["జమ",243],["పగ",243],["గె",243],["ైక",242],["ెవ",240],["ూన",239],["షే",238],["డప",238],["తట",235],["ంశ",235],["యడ",235],["అయ",234],["డబ",234],["లచ",234],["బహ",232],["దగ",229],["ోబ",228],["సక",228],["పస",228],["డడ",228],["పవ",227],["వో",227],["కక",225],["దయ",225],["ఉత",225],["గీ",224],["థు",223],["వయ",223],["ుళ",221],["దృ",221],["సవ",221],["మద",221],["ొత",218],["ిణ",217],["కద",217],["థమ",216],["భం",215],["ేచ",215],["గట",214],["మగ",214],["సత",214],["వశ",214],["బే",213],["బై",213],["శీ",212],["సప",212],["ఫల",211],["బయ",211],["జె",210],["జో",209],["ఒక",209],["లద",208],["బట",208],["దవ",208],["కచ",208],["టవ",207],["మడ",206],["ెచ",205],["టడ",204],["రభ",203],["చమ",203],["ీచ",203],["ఆడ",203],["హె",202],["డీ",201],["సొ",201],["ధక",199],["తత",199],["భయ",198],["ీళ",197],["ఖా",196],["మధ",196],["చద",195],["బీ",195],["రర",193],["మృ",193],["ుయ",192],["ేహ",192],["చవ",191],["పయ",189],["ళమ",188],["థం",188],["మణ",188],["కగ",186],["తృ",185],["డో",184],["యగ",183],["ఖం",182],["తడ",182],["ైవ",182],["ౌర",181],["హై",181],["ఎన",180],["ూమ",179],["ఏక",179],["దై",178],["భు",177],["కళ",176],["మౌ",175],["ఆల",175],["చో",174],["టై",173],["భే",173],["డర",172],["్హ",171],["డత",171],["భక",171],["ఆశ",171],["కబ",170],["జే",169],["భో",169],["ఎల",169],["టబ",168],["భమ",168],["ైత",167],["ృద",167],["షం",166],["పశ",166],["ీగ",165],["తస",164],["నయ",164],["యొ",164],["మప",163],["గప",162],["వగ",161],["శన",161],["జయ",160],["జగ",159],["అణ",159],["షర",158],["ిఫ",158],["భై",158],["ెబ",158],["ఎడ",158],["దప",157],["ైద",157],["హే",156],["హీ",156],["ూద",156],["రశ",155],["చత",154],["షయ",154],["అచ",153],["వహ",153],["కౌ",152],["హస",152],["గక",152],["ుశ",151],["ాఫ",150],["నబ",150],["ళం",149],["శర",149],["ఖమ",147],["పబ",147],["ఆవ",147],["గబ",146],["హో",146],["ూష",145],["ఆద",144],["చప",143],["బూ",143],["ఫో",143],["గణ",142],["యద",142],["షక",141],["ైజ",140],["ౌట",140],["వప",139],["ణక",138],["లూ",138],["జక",138],["చట",137],["శో",137],["గస",136],["రడ",136],["ఆయ",136],["ూజ",135],["వవ",135],["మచ",134],["అశ",133],["నొ",133],["గచ",131],["టగ",131],["హన",131],["శబ",131],["ిళ",130],["ేళ",130],["ఆస",130],["ంవ",129],["ోళ",129],["అబ",129],["ైస",129],["టూ",128],["దశ",128],["చగ",128],["టత",128],["వట",128],["థల",128],["ఫై",127],["తద",125],["ణీ",125],["ధీ",124],["సగ",124],["నచ",123],["షీ",123],["పప",123],["సద",123],["ళా",122],["ైమ",122],["చచ",121],["ఘా",120],["ఎర",120],["చొ",119],["ఎగ",118],["సౌ",117],["శత",117],["ఇర",117],["లభ",116],["ాఖ",116],["ీష",115],["భర",115],["హత",114],["ఠి",114],["ీజ",114],["ూగ",114],["ఆప",114],["అట",113],["జూ",113],["యశ",113],["రట",113],["ఎం",113],["ంహ",112],["ేబ",112],["లొ",112],["థక",111],["ాథ",111],["పణ",110],["టస",110],["ౌక",110],["ఆన",110],["ోఫ",110],["వణ",109],["ంథ",109],["ౌత",109],["వబ",109],["ేధ",109],["కణ",108],["ఖర",108],["చయ",108],["శయ",108],["ృం",108],["యచ",108],["యట",107],["శూ",106],["శప",105],["శల",105],["అజ",105],["వజ",105],["కథ",105],["ఉల",105],["గజ",104],["ోశ",103],["హక",103],["టయ",102],["షత",102],["ూఢ",102],["దట",101],["ొవ",101],["ొచ",100],["గగ",100],["షప",100],["ఏడ",100],["ఆత",100],["ౌం",99],["సభ",99],["యజ",99],["గౌ",99],["ృక",99],["ణగ",98],["తై",98],["థ్",98],["ేఖ",97],["ఉం",97],["ౌన",97],["లడ",97],["ఆట",97],["ఘన",96],["ఛా",96],["్ఘ",96],["ఫె",96],["ుధ",95],["ంఖ",95],["యభ",95],["ఫర",95],["జడ",94],["ఘట",94],["ఎక",94],["రధ",93],["దస",93],["తబ",93],["ఊర",93],["ంఠ",92],["మళ",92],["ుః",92],["శస",92],["వభ",92],["ోం",92],["ధూ",91],["కశ",91],["నశ",91],["రష",91],["మశ",91],["ఉర",91],["ఆం",90],["జవ",89],["ోభ",89],["కష",89],["లహ",88],["గళ",87],["రౌ",87],["ఎద",87],["ృహ",86],["జస",86],["ూయ",86],["డయ",84],["ీశ",84],["ణప",84],["ధవ",83],["ాఘ",83],["ఠా",83],["ోణ",83],["ఆమ",83],["ొస",83],["బక",81],["నభ",81],["ఇన",81],["డచ",80],["హప",80],["గై",80],["దత",80],["ఘ్",79],["యయ",79],["ృశ",79],["ూవ",79],["ఉన",78],["ీణ",78],["వధ",77],["ధే",77],["ుహ",76],["దడ",76],["భీ",76],["ీం",76],["జప",76],["ఎస",76],["శృ",75],["ఆచ",75],["ఃఖ",74],["దౌ",74],["ఒడ",73],["ృగ",73],["ొబ",72],["దబ",72],["బత",72],["కయ",71],["ఖి",71],["ిఘ",71],["మజ",71],["బస",71],["గృ",70],["పృ",70],["ైబ",70],["ఘం",69],["ిఖ",68],["లజ",68],["ంఘ",67],["ాఠ",67],["షల",67],["ఆగ",67],["ణయ",67],["అహ",67],["తః",66],["ఠు",66],["టచ",66],["ిథ",66],["ణన",66],["తచ",66],["సృ",66],["ఉడ",66],["ధప",65],["ఫీ",65],["బళ",65],["ణత",65],["ఏర",65],["పౌ",65],["ణచ",64],["బన",64],["మబ",64],["తళ",64],["ళల",63],["ేణ",63],["డస",63],["యథ",63],["ఉచ",63],["జై",63],["ఎప",63],["ధత",62],["శవ",62],["ఘో",62],["రథ",62],["ణవ",62],["ఒప",62],["ఇత",61],["ధై",61],["ృప",61],["వళ",61],["పథ",61],["లశ",61],["ూబ",61],["రళ",61],["ళీ",60],["తయ",60],["ీభ",60],["ఫే",60],["ూళ",60],["యధ",59],["డూ",59],["సబ",59],["హల",59],["ఈడ",59],["ఘు",58],["ూహ",58],["హవ",58],["భద",58],["ఠమ",57],["తభ",57],["కజ",57],["్ఖ",57],["హద",57],["ీబ",57],["ఛే",56],["పజ",56],["ళన",56],["ఫు",56],["ఇల",56],["ఈశ",56],["ఆజ",55],["ఆహ",55],["యణ",55],["గయ",55],["జబ",55],["శై",55],["ఖు",54],["బమ",54],["హృ",54],["డొ",54],["ళవ",54],["ఎట",54],["ఓర",54],["దద",53],["షధ",53],["ఛి",53],["సయ",53],["ఎత",53],["ఏమ",53],["ఠం",52],["దళ",52],["ంర",52],["థన",51],["ఐద",51],["ైం",51],["భగ",51],["సస",50],["నష",50],["ెజ",50],["ఎవ",50],["ఖప",50],["ైగ",49],["ంయ",49],["ఇచ",49],["షో",48],["సజ",48],["ఉక",48],["ీధ",47],["షస",47],["టొ",47],["ణశ",47],["చై",47],["హజ",47],["ౌమ",47],["చౌ",47],["ణద",46],["ఆధ",46],["శె",46],["ఇస",46],["ళగ",46],["షగ",45],["ఞు",45],["ౌల",45],["ధో",45],["ళక",45],["ైయ",45],["ణల",45],["ఉమ",45],["జొ",45],["యౌ",44],["ఇద",44],["పహ",44],["ఢా",44],["ఎమ",44],["ొళ",44],["దచ",43],["ణర",43],["హణ",43],["ఖల",43],["ఇట",43],["ధృ",43],["ఉబ",43],["తశ",42],["ొణ",42],["హూ",42],["ఒం",42],["ంమ",41],["ఘవ",41],["థర",41],["లౌ",41],["ఠ్",41],["జత",41],["వౌ",41],["ుఅ",40],["అఘ",40],["ిఅ",40],["లట",40],["ఇవ",40],["నజ",39],["కఠ",39],["్ఙ",39],["ఉస",39],["ెఫ",39],["ఏల",39],["ృఢ",39],["ఃప",38],["ఢమ",38],["ాఢ",38],["ఒర",38],["ఖన",37],["టణ",37],["పళ",36],["బగ",36],["షవ",36],["నః",36],["ీఫ",36],["సఫ",35],["ొహ",35],["ిఆ",35],["ంల",35],["మభ",35],["డట",35],["ేఘ",35],["ృణ",35],["భస",34],["ణస",34],["భజ",34],["ీహ",34],["్ఢ",34],["ళప",34],["లఘ",33],["భౌ",33],["ంఛ",33],["తజ",33],["ెష",33],["ఇక",33],["ఒల",33],["ుఫ",33],["ఢి",33],["ౌష",32],["ఛం",32],["బౌ",32],["ఠీ",32],["ధగ",32],["ైశ",32],["ఫట",32],["ణో",32],["జట",32],["ఘి",32],["ఇష",32],["ఉగ",31],["ఝా",31],["థే",31],["ఘర",31],["సడ",31],["ఢ్",31],["ౌవ",31],["ణె",31],["పఠ",31],["తహ",30],["నృ",30],["షడ",30],["థయ",30],["ృథ",30],["భట",30],["కధ",30],["టఎ",30],["ొజ",30],["ఓడ",30],["టఇ",30],["ళత",29],["ంఫ",29],["ీఠ",29],["భృ",29],["నౌ",29],["ైఆ",29],["ైఏ",29],["ఢు",29],["శద",29],["బజ",29],["ైచ",29],["ౌడ",29],["ృవ",29],["ఖడ",28],["ఘమ",28],["శగ",28],["షచ",28],["పష",28],["చస",28],["ైఎ",28],["ైఒ",28],["సట",28],["షట",28],["ఈర",28],["ఋణ",28],["ూం",28],["ఐస",28],["టద",27],["ఃక",27],["ాః",27],["బృ",27],["థూ",27],["ఇమ",27],["ఏం",27],["మష",27],["ైఫ",27],["ైష",27],["రఘ",26],["ఉజ",26],["నహ",26],["ఊహ",26],["ఏట",26],["ధస",25],["కభ",25],["భల",25],["ఊడ",25],["ఎచ",25],["జద",25],["లధ",25],["ౌద",25],["ణే",24],["రఫ",24],["అష",24],["ఖే",24],["షద",24],["ఒత",24],["ఓప",24],["ళయ",24],["ూశ",24],["షె",24],["గభ",24],["ెభ",24],["సళ",24],["రఖ",23],["ధయ",23],["ఏవ",23],["ధచ",23],["ిఏ",23],["ఠన",23],["ంన",23],["థై",23],["ఇబ",23],["దహ",23],["ఋత",23],["ఏన",23],["ఏబ",23],["సచ",23],["ఛ్",22],["ైఐ",22],["ఙ్",22],["ఢం",22],["పధ",22],["ఊప",22],["హగ",22],["గధ",22],["డజ",21],["ఇప",21],["ధల",21],["ఉష",21],["షభ",21],["ఖస",21],["ఖో",21],["ెహ",21],["ొఉ",21],["ఠో",20],["ిః",20],["ఛన",20],["ిఐ",20],["శౌ",20],["ఛత",20],["ణభ",20],["ఈత",20],["ఊగ",20],["థీ",20],["ఔష",20],["ౌస",20],["ఖత",20],["శశ",20],["హౌ",19],["థవ",19],["పభ",19],["భన",19],["ఙా",19],["దభ",19],["ఈల",19],["ఈవ",19],["షష",19],["హయ",19],["ఫస",19],["ూఫ",19],["ౌగ",19],["దజ",18],["అఖ",18],["యః",18],["ఛమ",18],["నధ",18],["ైఅ",18],["ఇడ",18],["ఈస",18],["ఐన",18],["గశ",18],["ఏప",18],["ఓట",18],["ఓల",18],["ళే",18],["ౌజ",18],["ృధ",18],["ెణ",18],["థగ",17],["్ఝ",17],["థప",17],["డౌ",17],["థో",17],["శచ",17],["ఆఖ",17],["ఆఫ",17],["ఈక",17],["ఈద",17],["ఉభ",17],["ఖీ",17],["ఠక",17],["హశ",17],["ళద",17],["ఖై",17],["దణ",17],["ౌఢ",17],["ాఇ",16],["ౌఖ",16],["ఛీ",16],["ఢత",16],["ణజ",16],["ఆణ",16],["ఋష",16],["ఆబ",16],["ఆభ",16],["ఇగ",16],["ూణ",16],["ఐక",16],["ఐశ",16],["ఓద",16],["ౌప",16],["భప",16],["జహ",16],["ొఫ",16],["హభ",16],["జశ",15],["హట",15],["ృస",15],["థబ",15],["సఖ",15],["ఛక",15],["ఛగ",15],["ఈష",15],["టజ",15],["ీథ",15],["ఏత",15],["ఐర",15],["ఓష",15],["ళె",15],["హళ",15],["తధ",15],["ఖవ",15],["హచ",15],["బవ",15],["హబ",15],["జచ",14],["ఖక",14],["ైణ",14],["జభ",14],["థస",14],["ీఖ",14],["ఠవ",14],["ఫయ",14],["ఇయ",14],["ఇహ",14],["ఈన",14],["రః",14],["ఊద",14],["ఏద",14],["ఒగ",14],["ఓక",14],["ైహ",14],["మథ",14],["మఠ",14],["ఖచ",14],["ఖద",14],["బచ",14],["ౌళ",14],["ిఠ",14],["భత",14],["ైధ",14],["తథ",14],["నఖ",14],["ఫొ",14],["హొ",14],["ైఖ",13],["ఃస",13],["డభ",13],["ిఉ",13],["షజ",13],["ౌచ",13],["యహ",13],["ఛు",13],["ఈట",13],["జృ",13],["ఉట",13],["థె",13],["ఐహ",13],["ఒద",13],["ఓస",13],["ఔద",13],["ఔన",13],["షశ",13],["ఫం",13],["షౌ",13],["ఖజ",13],["తౌ",13],["టశ",13],["ఘడ",13],["ఝర",13],["ఫూ",13],["ృజ",13],["జజ",12],["నఅ",12],["కహ",12],["షై",12],["ఊచ",12],["ఈమ",12],["ణబ",12],["ఏస",12],["ఒన",12],["ఓయ",12],["ళర",12],["ేఫ",12],["గహ",12],["ఖూ",12],["ృడ",12],["ఝల",12],["ౌహ",12],["ీఘ",12],["ఝం",12],["కఫ",11],["ఛల",11],["ఢప",11],["ధశ",11],["ఞత",11],["ఞప",11],["ఋజ",11],["ఠత",11],["ఒళ",11],["ఓజ",11],["ఓవ",11],["ౌశ",11],["ఢీ",11],["ళశ",11],["శభ",11],["ుఆ",10],["ఞల",10],["ుఘ",10],["బబ",10],["థత",10],["అళ",10],["ఆఘ",10],["మఘ",10],["ఏష",10],["ఇజ",10],["ఈగ",10],["సధ",10],["ఉవ",10],["ఊత",10],["ఎజ",10],["ఎయ",10],["ఒట",10],["ఒయ",10],["ఔత",10],["టౌ",10],["ణధ",10],["ళబ",10],["షూ",10],["ోథ",10],["హడ",10],["ాఅ",9],["ేభ",9],["కః",9],["ఉశ",9],["ఊస",9],["ఏజ",9],["ఏగ",9],["ఓన",9],["ఛప",9],["సఘ",9],["ొఠ",9],["డశ",9],["ఢక",9],["భశ",9],["ఢగ",9],["ఛె",9],["ఝు",9],["ఖభ",9],["ఫణ",9],["టఏ",9],["ఫౌ",9],["ృచ",9],["సణ",9],["హఠ",9],["తఘ",8],["ధభ",8],["ైభ",8],["ాఙ",8],["ఈజ",8],["ఈయ",8],["మః",8],["ూఖ",8],["ళో",8],["ఏచ",8],["ఐత",8],["ఒస",8],["ఔర",8],["ఠల",8],["చశ",8],["ుఠ",8],["ధౌ",8],["ళహ",8],["టభ",8],["టఫ",8],["ంఢ",8],["ఢభ",8],["ఫన",8],["ౌణ",8],["ఘల",8],["ీఅ",8],["ఛై",8],["ంష",8],["ైథ",8],["ళస",8],["ఢవ",8],["హధ",8],["సశ",8],["షహ",8],["ఫక",8],["భళ",8],["ఛద",7],["ఛర",7],["తణ",7],["ఘత",7],["ుఛ",7],["ోఅ",7],["ేఅ",7],["ధడ",7],["ఆళ",7],["ఈచ",7],["ఈప",7],["ఛవ",7],["భణ",7],["ఱ్",7],["ఊక",7],["ఊట",7],["ధె",7],["ఓం",7],["ఠగ",7],["ఠభ",7],["ఠర",7],["ఠశ",7],["ఠే",7],["ఖగ",7],["ఖబ",7],["ృభ",7],["ఘీ",7],["ఘూ",7],["ంఝ",7],["జధ",7],["ంఅ",7],["బశ",7],["శొ",7],["బష",6],["లష",6],["ాఉ",6],["ధః",6],["కఆ",6],["గఅ",6],["తఅ",6],["అఫ",6],["థశ",6],["వఘ",6],["ుఇ",6],["దధ",6],["ఝి",6],["ఉయ",6],["్ఱ",6],["ఊష",6],["ఋక",6],["ీఆ",6],["ఎబ",6],["ెథ",6],["ఐడ",6],["ఖట",6],["ఔచ",6],["ధబ",6],["ఠప",6],["బప",6],["శః",6],["ఖణ",6],["గః",6],["ుఢ",6],["ఘణ",6],["ఘస",6],["ఘృ",6],["చభ",6],["నఫ",6],["జఠ",6],["యఘ",6],["జౌ",6],["ఞ్",6],["దః",6],["ౌభ",6],["రృ",6],["ెధ",6],["యఖ",6],["ళూ",6],["శష",6],["తఫ",5],["ఘౌ",5],["అథ",5],["ోఇ",5],["చజ",5],["ణై",5],["పఖ",5],["ఫజ",5],["థచ",5],["థభ",5],["ఫళ",5],["ఆష",5],["ఛయ",5],["ెఅ",5],["ఈహ",5],["బణ",5],["ే్",5],["ఏభ",5],["ఐం",5],["ఒవ",5],["ఓఢ",5],["ఓబ",5],["ఓహ",5],["ఔప",5],["ఛశ",5],["ణహ",5],["మఫ",5],["ిఇ",5],["మఖ",5],["ృఛ",5],["ొఖ",5],["ోఢ",5],["ీఇ",5],["ోఎ",5],["ాఁ",5],["ెఱ",5],["ెశ",5],["జఫ",5],["ా్",5],["భొ",5],["తఖ",5],["షబ",5],["థౌ",5],["దఢ",5],["ఘద",5],["ధొ",5],["ి్",5],["ంఉ",5],["థళ",5],["ైళ",5],["ఘప",5],["ఫత",5],["బధ",5],["యష",5],["డహ",4],["ఞో",4],["టహ",4],["నఘ",4],["ధద",4],["ోఏ",4],["ఞే",4],["ధజ",4],["ీఢ",4],["రఉ",4],["ఉధ",4],["ఊఁ",4],["ఊన",4],["ఊళ",4],["ఁడ",4],["ఏహ",4],["ఐట",4],["ఐమ",4],["ఐవ",4],["ఒచ",4],["ఒజ",4],["ఓగ",4],["ఓమ",4],["ఠస",4],["ఫమ",4],["ౌయ",4],["లఖ",4],["ిఎ",4],["ుథ",4],["ళడ",4],["ృమ",4],["ళళ",4],["ోఖ",4],["ఖొ",4],["చణ",4],["ఞం",4],["ఝళ",4],["ఠూ",4],["ు్",4],["లఅ",4],["ైః",4],["దఖ",4],["ుఉ",4],["ఘచ",4],["ఖశ",4],["ణణ",4],["ుఏ",4],["టఒ",4],["ెఖ",4],["ొష",4],["ంఙ",4],["ీఎ",4],["ళఫ",4],["ూభ",4],["ూథ",4],["తఋ",4],["గఛ",3],["శడ",3],["చహ",3],["టఆ",3],["ధహ",3],["షః",3],["ిి",3],["ఘళ",3],["ణడ",3],["ోఘ",3],["లః",3],["వష",3],["భధ",3],["హహ",3],["ఞక",3],["ఞన",3],["ఢర",3],["ఛస",3],["ఈం",3],["ఈథ",3],["ఈధ",3],["ఉహ",3],["ఊయ",3],["ఊల",3],["ఋఉ",3],["ఋగ",3],["ఋశ",3],["ఎళ",3],["కఛ",3],["ఏణ",3],["ఏఫ",3],["ఐచ",3],["ఐబ",3],["ఐయ",3],["ఒహ",3],["జః",3],["ఢయ",3],["ఔగ",3],["ఔట",3],["ఔడ",3],["ంఇ",3],["జళ",3],["ృట",3],["ేథ",3],["ఠడ",3],["టఅ",3],["మఇ",3],["్ం",3],["షొ",3],["డఖ",3],["యఅ",3],["ణః",3],["గఫ",3],["ఢన",3],["ఢబ",3],["ఢస",3],["యళ",3],["ఛౌ",3],["ఘజ",3],["ఘె",3],["శజ",3],["ేఛ",3],["ౌబ",3],["జఘ",3],["డధ",3],["ఝడ",3],["ఝష",3],["ఝ్",3],["టః",3],["టృ",3],["డృ",3],["ఢే",3],["ఢో",3],["థద",3],["ుఝ",3],["ఛభ",3],["దఫ",3],["దష",3],["ఘక",3],["ధణ",3],["వఖ",3],["పఙ",3],["ృల",3],["యఫ",3],["ఞమ",3],["థడ",3],["శహ",3],["ఞి",3],["లఆ",3],["ఱి",3],["ాఱ",3],["ఙు",3],["ఃశ",2],["ైఉ",2],["ధష",2],["థజ",2],["ాఆ",2],["సథ",2],["ఞవ",2],["డఅ",2],["ఇణ",2],["ఇథ",2],["ఇళ",2],["ఇశ",2],["ెఆ",2],["ఈఫ",2],["ఈళ",2],["రఆ",2],["ఁత",2],["ఊం",2],["ఊఫ",2],["ఊబ",2],["ఊవ",2],["ఉణ",2],["ఋద",2],["ఎఱ",2],["ఱక",2],["ోఆ",2],["ఫథ",2],["ఏయ",2],["ఏళ",2],["ఐణ",2],["ఐల",2],["కఅ",2],["ేఒ",2],["డణ",2],["ఒబ",2],["ఒమ",2],["ఓచ",2],["ఓణ",2],["ఓత",2],["ఓళ",2],["ఓశ",2],["ఠబ",2],["ఙత",2],["ఫహ",2],["ళధ",2],["శధ",2],["థొ",2],["ృర",2],["భహ",2],["ొఱ",2],["ోఠ",2],["వథ",2],["ఖఁ",2],["జఖ",2],["ఘధ",2],["ఖయ",2],["గఇ",2],["జఢ",2],["పఇ",2],["ఢచ",2],["నఏ",2],["ేి",2],["ఢల",2],["ఢె",2],["ఘే",2],["ఘొ",2],["ఙల",2],["ఙో",2],["చష",2],["ేఉ",2],["ఱప",2],["ఱు",2],["లృ",2],["ుఐ",2],["ోఉ",2],["ఛో",2],["జణ",2],["ెఠ",2],["ఝట",2],["ఝూ",2],["ఝే",2],["ఝై",2],["డః",2],["డఫ",2],["ఢౌ",2],["తఇ",2],["ిఋ",2],["పః",2],["తఱ",2],["పఅ",2],["లఫ",2],["ళై",2],["ీ్",2],["ోః",2],["షఖ",2],["ధట",2],["భష",2],["నఙ",2],["నళ",2],["ళచ",2],["ుఁ",2],["ైఘ",2],["ిఢ",2],["వఝ",2],["ళభ",2],["ణూ",2],["ిఛ",2],["ఛబ",2],["దఎ",2],["దఘ",2],["ఞగ",2],["ఞచ",2],["ఢజ",2],["ౌధ",2],["ుఎ",2],["ోఛ",2],["బఠ",2],["బఫ",2],["లథ",2],["ృన",2],["ఃమ",2],["ాఛ",2],["ూధ",2],["మఝ",2],["థః",2],["ఙమ",2],["ిఒ",2],["ేఢ",2],["సః",2],["ోఝ",2],["ేఱ",2],["ఱం",2],["ఱీ",2],["శఠ",2],["శణ",2],["శఫ",2],["వః",2],["ేఠ",2],["థట",2],["ీః",2],["హఫ",2]];
+  const TE_BIGRAM_FREQ = (function(){
+    const m = new Map();
+    TE_BIGRAM_PAIRS.forEach(function(p){ m.set(p[0], p[1]); });
+    return m;
+  })();
+  function teluguLikelihoodScore(text){
+    const chars = Array.from(text);
+    if(chars.length<2) return 0;
+    let total=0;
+    for(let i=0;i<chars.length-1;i++){
+      total += Math.log(1 + (TE_BIGRAM_FREQ.get(chars[i]+chars[i+1]) || 0));
+    }
+    return total / (chars.length-1); // average, so length doesn't dominate
+  }
+
+  const RT_CONSONANTS = [
+    ['shh','ష'], ['chh','ఛ'],
+    ['kh','ఖ'], ['gh','ఘ'], ['ch','చ'], ['jh','ఝ'], ['Th','ఠ'], ['Dh','ఢ'], ['th','థ'], ['dh','ధ'], ['ph','ఫ'], ['bh','భ'],
+    ['sh','శ'], ['Sh','ష'], ['ng','ఙ'], ['ny','ఞ'], ['jn','జ్ఞ'], ['gn','జ్ఞ'],
+    ['k','క'], ['g','గ'], ['c','చ'], ['j','జ'], ['T','ట'], ['D','డ'], ['N','ణ'], ['t','త'], ['d','ద'], ['n','న'],
+    ['p','ప'], ['b','బ'], ['f','ఫ'], ['m','మ'], ['y','య'], ['r','ర'], ['l','ల'], ['v','వ'], ['w','వ'],
+    ['s','స'], ['h','హ'], ['L','ళ'], ['R','ఱ'], ['x','క్ష'], ['q','క'], ['z','జ']
+  ];
+  const RT_VOWELS = [ // [token, independent form, matra (empty = inherent 'a')]
+    ['aa','ఆ','ా'], ['ii','ఈ','ీ'], ['uu','ఊ','ూ'], ['ee','ఏ','ే'], ['oo','ఊ','ూ'],
+    ['ai','ఐ','ై'], ['au','ఔ','ౌ'], ['ou','ఔ','ౌ'],
+    ['A','ఆ','ా'], ['I','ఈ','ీ'], ['U','ఊ','ూ'], ['E','ఏ','ే'], ['O','ఓ','ో'],
+    ['a','అ',''], ['i','ఇ','ి'], ['u','ఉ','ు'], ['e','ఎ','ె'], ['o','ఒ','ొ']
+  ];
+  function transliterateWord(word){
+    let pos=0, out='', pending=null;
+    const n = word.length;
+    while(pos<n){
+      const ch = word[pos];
+      if(ch==='M'){ if(pending){ out+=pending; pending=null; } out+='ం'; pos++; continue; }
+      if(ch==='H'){ if(pending){ out+=pending; pending=null; } out+='ః'; pos++; continue; }
+      if(ch==='n' || ch==='m'){
+        // "n"/"m" directly before another consonant (no vowel between) is almost
+        // always written as anusvara (ం) in Telugu, not spelled out — e.g. "venkata" -> వెంకట, not వెన్కత.
+        let nextIsConsonant=false;
+        for(let i=0;i<RT_CONSONANTS.length;i++){
+          const tok=RT_CONSONANTS[i][0];
+          if(word.substr(pos+1, tok.length)===tok){ nextIsConsonant=true; break; }
+        }
+        if(nextIsConsonant){
+          if(pending){ out+=pending; pending=null; }
+          out += 'ం';
+          pos += 1;
+          continue;
+        }
+      }
+      let mc=null;
+      for(let i=0;i<RT_CONSONANTS.length;i++){
+        const tok=RT_CONSONANTS[i][0];
+        if(word.substr(pos, tok.length)===tok){ mc=RT_CONSONANTS[i]; break; }
+      }
+      if(mc){
+        if(pending) out += pending + '్';
+        pending = mc[1];
+        pos += mc[0].length;
+        continue;
+      }
+      let mv=null;
+      for(let i=0;i<RT_VOWELS.length;i++){
+        const tok=RT_VOWELS[i][0];
+        if(word.substr(pos, tok.length)===tok){ mv=RT_VOWELS[i]; break; }
+      }
+      if(mv){
+        if(pending){ out += pending + mv[2]; pending=null; }
+        else { out += mv[1]; }
+        pos += mv[0].length;
+        continue;
+      }
+      if(pending){ out+=pending; pending=null; }
+      out += ch;
+      pos++;
+    }
+    if(pending) out += pending;
+    return out;
+  }
+
+  // ---------------- real-word dictionary (ranks candidates, doesn't just guess) ----------------
+  // ~125k real Telugu words (LibreOffice's open-source spell-check dictionary).
+  // Loaded lazily on first use, not at page load — guests who never type never fetch it.
+  let _teluguDict = null;
+  let _teluguDictLoading = null;
+  function loadTeluguDictionary(){
+    if(_teluguDict) return Promise.resolve(_teluguDict);
+    if(_teluguDictLoading) return _teluguDictLoading;
+    _teluguDictLoading = fetch('/te-dictionary.txt').then(function(res){
+      if(!res.ok) throw new Error('no dictionary');
+      return res.text();
+    }).then(function(text){
+      _teluguDict = new Set(text.split('\n').map(function(w){ return w.trim(); }).filter(Boolean));
+      return _teluguDict;
+    }).catch(function(){
+      _teluguDict = new Set(); // offline / local file with no server — fall back to heuristic-only ranking
+      return _teluguDict;
+    });
+    return _teluguDictLoading;
+  }
+
+  // Generates plausible alternate ROMAN spellings around the sounds that are
+  // genuinely ambiguous when typing Telugu casually (dental vs retroflex
+  // t/d/n, s vs sh, and final vowel length) — then transliterates each and
+  // lets the real-word dictionary decide which are actually correct words.
+  function generateRomanVariants(word){
+    const variants = new Set([word]);
+    function swap(re, repl){ if(re.test(word)) variants.add(word.replace(re, repl)); }
+    swap(/t/g,'T'); swap(/T/g,'t');
+    swap(/d/g,'D'); swap(/D/g,'d');
+    swap(/n/g,'N'); swap(/N/g,'n');
+    if(/s(?!h)/.test(word)) variants.add(word.replace(/s(?!h)/g,'sh'));
+    if(/sh/.test(word)) variants.add(word.replace(/sh/g,'s'));
+    const finalSwap = {'a':null,'i':'ii','u':'uu','e':'E','o':'O','I':'i','U':'u','E':'e','O':'o'};
+    const last = word.slice(-1);
+    if(finalSwap[last]) variants.add(word.slice(0,-1) + finalSwap[last]);
+    if(/t/.test(word) && /d/.test(word)) variants.add(word.replace(/t/g,'T').replace(/d/g,'D'));
+    return Array.from(variants);
+  }
+
+  // Returns up to 5 candidate Telugu renderings, dictionary-confirmed real
+  // words first, falling back to heuristic-only readings to fill the rest.
+  function generateCandidates(word){
+    if(!/[a-zA-Z]/.test(word)) return {candidates:[transliterateWord(word)], anyInDict:false};
+    const dict = _teluguDict || new Set();
+    const romanVariants = generateRomanVariants(word);
+    const seen = new Map();
+    romanVariants.forEach(function(rv, idx){
+      const tel = transliterateWord(rv);
+      if(!seen.has(tel)) seen.set(tel, {inDict: dict.has(tel), priority: idx, likelihood: teluguLikelihoodScore(tel)});
+    });
+    const list = Array.from(seen.entries()).map(function(e){
+      return {text:e[0], inDict:e[1].inDict, priority:e[1].priority, likelihood:e[1].likelihood};
+    });
+    list.sort(function(a,b){
+      if(a.inDict !== b.inDict) return a.inDict ? -1 : 1;
+      if(!a.inDict){ // among non-dictionary candidates, prefer more "Telugu-sounding" letter sequences
+        const diff = b.likelihood - a.likelihood;
+        if(Math.abs(diff) > 0.05) return diff;
+      }
+      return a.priority - b.priority;
+    });
+    return {
+      candidates: list.slice(0,5).map(function(x){ return x.text; }),
+      anyInDict: list.some(function(x){ return x.inDict; })
+    };
+  }
+
+  // ---------------- shared floating suggestion dropdown ----------------
+  let _suggestBox = null;
+  function getSuggestBox(){
+    if(!_suggestBox){
+      _suggestBox = document.createElement('div');
+      _suggestBox.style.cssText = 'position:absolute; z-index:500; background:#fff; border:1px solid var(--line); border-radius:8px; box-shadow:0 6px 20px rgba(0,0,0,0.18); font-size:13.5px; overflow:hidden; display:none; font-family:var(--serif);';
+      document.body.appendChild(_suggestBox);
+    }
+    return _suggestBox;
+  }
+  function hideSuggestBox(){ getSuggestBox().style.display='none'; }
+
+  const _lastConvertedRange = new WeakMap(); // input -> {start, end} of the most recently auto-converted word
+
+  function applySuggestion(input, candidate){
+    const info = _lastConvertedRange.get(input);
+    if(!info) return;
+    const value = input.value;
+    const newValue = value.slice(0, info.start) + candidate + value.slice(info.end);
+    input.value = newValue;
+    const newEnd = info.start + candidate.length;
+    _lastConvertedRange.set(input, {start:info.start, end:newEnd});
+    input.focus();
+    input.setSelectionRange(newEnd, newEnd);
+  }
+
+  function showSuggestions(input, candidates, anyInDict){
+    const showHint = !anyInDict;
+    if(candidates.length<=1 && !showHint){ hideSuggestBox(); return; }
+    const box = getSuggestBox();
+    box.innerHTML='';
+    candidates.forEach(function(cand, i){
+      const item = el('div', {
+        style:'padding:7px 14px; cursor:pointer; white-space:nowrap; display:flex; gap:8px; align-items:baseline;',
+        onmousedown:function(e){ e.preventDefault(); applySuggestion(input, cand); hideSuggestBox(); }
+      }, [
+        el('span', {style:'font-family:var(--mono); font-size:10.5px; color:var(--ink-soft);'}, [String(i+1)]),
+        el('span', null, [cand])
+      ]);
+      item.addEventListener('mouseenter', function(){ item.style.background='rgba(176,141,63,0.12)'; });
+      item.addEventListener('mouseleave', function(){ item.style.background=''; });
+      box.appendChild(item);
+    });
+    if(showHint){
+      box.appendChild(el('div', {style:'padding:7px 14px; font-size:11.5px; color:var(--ink-soft); border-top:1px solid var(--line); font-family:var(--sans);'}, [
+        'No exact match — try a candidate above, or type it as separate syllables and press Ctrl+J to join them.'
+      ]));
+    }
+    const rect = input.getBoundingClientRect();
+    box.style.left = (rect.left + window.scrollX) + 'px';
+    box.style.top = (rect.bottom + window.scrollY + 4) + 'px';
+    box.style.minWidth = rect.width + 'px';
+    box.style.display='block';
+  }
+
+  // Attaches Telugu typing to a text input: converts each word as you finish
+  // typing it (space, or blur for the last word) and shows up to 5 ranked
+  // candidates in a dropdown to pick from. Ctrl+E toggles English for that
+  // field. `defaultTelugu:false` starts the field in English mode instead.
+  const _teluguInputState = new WeakMap();
+  function attachTeluguTransliteration(input, opts){
+    const defaultOn = !(opts && opts.defaultTelugu===false);
+    _teluguInputState.set(input, {enabled:defaultOn});
+    input.style.borderColor = defaultOn ? '' : 'var(--maroon)';
+    input.title = defaultOn
+      ? 'Types in Telugu — Ctrl+E for English. Ctrl+J joins syllables you built separately.'
+      : 'English mode — Ctrl+E for Telugu typing.';
+    loadTeluguDictionary(); // warm the cache so it's ready by the time they type
+
+    input.addEventListener('keydown', function(e){
+      if(e.ctrlKey && (e.key==='e' || e.key==='E')){
+        e.preventDefault();
+        const st = _teluguInputState.get(input);
+        st.enabled = !st.enabled;
+        input.style.borderColor = st.enabled ? '' : 'var(--maroon)';
+        input.title = st.enabled ? 'Telugu mode — Ctrl+E for English' : 'English mode — Ctrl+E for Telugu';
+        hideSuggestBox();
+        return;
+      }
+      // Ctrl+J: if a word won't come out right as one piece (rare names, conjuncts),
+      // type it as separate syllable chunks with spaces, then join them into one word.
+      if(e.ctrlKey && (e.key==='j' || e.key==='J')){
+        e.preventDefault();
+        input.value = joinTeluguRuns(input.value);
+        input.setSelectionRange(input.value.length, input.value.length);
+        hideSuggestBox();
+        return;
+      }
+      // Pick a suggestion with 1-5 right after a word converts, before typing continues.
+      if(/^[1-5]$/.test(e.key) && getSuggestBox().style.display==='block' && _lastConvertedRange.get(input)){
+        const idx = Number(e.key)-1;
+        const items = getSuggestBox().children;
+        if(items[idx]){
+          e.preventDefault();
+          items[idx].dispatchEvent(new Event('mousedown', {bubbles:true, cancelable:true}));
+          return;
+        }
+      }
+      if(e.key!==' '){ hideSuggestBox(); }
+      if(e.key===' '){
+        const st = _teluguInputState.get(input);
+        if(!st || !st.enabled) return;
+        const pos = input.selectionStart;
+        const value = input.value;
+        const before = value.slice(0,pos);
+        const after = value.slice(pos);
+        const lastSpace = before.lastIndexOf(' ');
+        const word = before.slice(lastSpace+1);
+        if(word && /[a-zA-Z]/.test(word)){
+          e.preventDefault();
+          const result = generateCandidates(word);
+          const top = result.candidates[0];
+          const wordStart = lastSpace+1;
+          const newBefore = before.slice(0,wordStart) + top + ' ';
+          input.value = newBefore + after;
+          const caretPos = newBefore.length;
+          input.setSelectionRange(caretPos, caretPos);
+          _lastConvertedRange.set(input, {start:wordStart, end:wordStart+top.length});
+          showSuggestions(input, result.candidates, result.anyInDict);
+        }
+      }
+    });
+    input.addEventListener('blur', function(){
+      setTimeout(hideSuggestBox, 150); // delay so a suggestion click (mousedown) still registers first
+      const st = _teluguInputState.get(input);
+      if(!st || !st.enabled) return;
+      const value = input.value;
+      const lastSpace = value.lastIndexOf(' ');
+      const word = value.slice(lastSpace+1);
+      if(word && /[a-zA-Z]/.test(word)){
+        input.value = value.slice(0,lastSpace+1) + generateCandidates(word).candidates[0];
+      }
+    });
+  }
+
+  // Merges consecutive space-separated pure-Telugu tokens into single words —
+  // e.g. after typing a rare name syllable-by-syllable ("kri Sh Na" each
+  // converting on its own), Ctrl+J collapses them into one word. Mixed-in
+  // English words or already-single Telugu words are left untouched.
+  function joinTeluguRuns(value){
+    const tokens = value.split(' ');
+    const isTeluguToken = function(t){ return t.length>0 && /^[\u0C00-\u0C7F]+$/.test(t); };
+    const out = [];
+    let buffer = '';
+    tokens.forEach(function(tok){
+      if(isTeluguToken(tok)){
+        buffer += tok;
+      } else {
+        if(buffer){ out.push(buffer); buffer=''; }
+        out.push(tok);
+      }
+    });
+    if(buffer) out.push(buffer);
+    return out.join(' ');
   }
 
   function getConfig(){
@@ -769,6 +1086,7 @@
   let returnModalLoanId=null;
   let importModalOpen=false;
   let deletedModalOpen=false;
+  let downloadModalOpen=false;
 
   function renderApp(){
     if(currentRole==='guest' && currentView==='register') currentView='catalog';
@@ -818,6 +1136,7 @@
     if(returnModalLoanId) renderReturnModal();
     if(importModalOpen) renderImportModal();
     if(deletedModalOpen) renderDeletedModal();
+    if(downloadModalOpen) renderDownloadModal();
   }
 
   function renderViewOnly(){
@@ -854,6 +1173,7 @@
 
     const toolActions = el('div', {class:'toolbar-actions'});
     toolActions.appendChild(el('button', {class:'btn-outline btn-small', onclick:function(){ window.print(); }}, ['Print catalog']));
+    toolActions.appendChild(el('button', {class:'btn-outline btn-small', onclick:function(){ downloadModalOpen=true; renderApp(); }}, ['Download']));
     if(currentRole==='admin'){
       toolActions.appendChild(el('span', {id:'deleted-count-holder'}));
       toolActions.appendChild(el('button', {class:'btn-outline btn-small', onclick:function(){ importModalOpen=true; renderApp(); }}, ['Import spreadsheet']));
@@ -983,7 +1303,7 @@
 
       const titleCell = el('td', {'data-label':'Title'});
       titleCell.appendChild(el('div', {class:'book-title'}, [b.title || 'Untitled']));
-      const metaBits = [b.publisher, b.year, (b.pages ? b.pages+' pp' : '')].filter(Boolean);
+      const metaBits = [b.publisher, b.year, (b.pages ? b.pages+' pp' : ''), (b.donor ? 'Donor: '+b.donor : '')].filter(Boolean);
       if(metaBits.length) titleCell.appendChild(el('div', {class:'book-meta'}, [metaBits.join(' · ')]));
       tr.appendChild(titleCell);
 
@@ -1024,6 +1344,8 @@
 
     const titleInp = el('input', {type:'text', value: existing?existing.title||'':''});
     const authorInp = el('input', {type:'text', value: existing?existing.author||'':''});
+    attachTeluguTransliteration(titleInp);
+    attachTeluguTransliteration(authorInp);
     const categoryInp = el('select');
     categoryInp.appendChild(el('option', {value:''}, ['— Select category —']));
     CATEGORIES.forEach(function(c){
@@ -1034,11 +1356,14 @@
     const isbnInp = el('input', {type:'text', value: existing?existing.isbn||'':''});
     const accessionInp = el('input', {type:'text', value: existing?existing.accessionNo||'':'', placeholder:'e.g. A 01'});
     const publisherInp = el('input', {type:'text', value: existing?existing.publisher||'':''});
+    attachTeluguTransliteration(publisherInp);
     const yearInp = el('input', {type:'text', value: existing?existing.year||'':'', placeholder:'e.g. 1998'});
     const pagesInp = el('input', {type:'text', value: existing?existing.pages||'':'', placeholder:'e.g. 262'});
     const totalInp = el('input', {type:'number', min:'0', value: existing?(existing.copiesTotal!=null?existing.copiesTotal:1):1});
     const availInp = el('input', {type:'number', min:'0', value: existing?(existing.copiesAvailable!=null?existing.copiesAvailable:existing.copiesTotal||1):1});
     const alsoUgcInp = el('input', {type:'checkbox', style:'width:auto;', checked: !!(existing && existing.alsoUGC)});
+    const donorInp = el('input', {type:'text', value: existing?existing.donor||'':'', placeholder:'e.g. Jaya Bharathi Library, Mirlagooda'});
+    attachTeluguTransliteration(donorInp);
 
     modal.appendChild(el('label', null, ['Title *']));
     modal.appendChild(titleInp);
@@ -1055,6 +1380,9 @@
     ugcWrap.appendChild(alsoUgcInp);
     ugcWrap.appendChild(document.createTextNode('Also show this book under UGC (in addition to its category above)'));
     modal.appendChild(ugcWrap);
+
+    modal.appendChild(el('label', null, ['Donor']));
+    modal.appendChild(donorInp);
 
     const g2 = el('div', {class:'grid-2'});
     const c3 = el('div'); c3.appendChild(el('label',null,['Publisher'])); c3.appendChild(publisherInp);
@@ -1096,6 +1424,7 @@
         author: authorInp.value.trim(),
         category: category,
         alsoUGC: !!alsoUgcInp.checked,
+        donor: donorInp.value.trim(),
         isbn: isbnInp.value.trim(),
         accessionNo: accNo,
         publisher: publisherInp.value.trim(),
@@ -1186,6 +1515,87 @@
     modal.appendChild(el('div', {class:'form-actions'}, [
       el('button', {class:'btn-outline', style:'flex:1', onclick:close}, ['Close'])
     ]));
+    backdrop.appendChild(modal);
+    root.appendChild(backdrop);
+  }
+
+  function csvEscape(val){
+    const s = String(val==null?'':val);
+    if(/[",\n]/.test(s)) return '"' + s.replace(/"/g,'""') + '"';
+    return s;
+  }
+
+  function renderDownloadModal(){
+    const close = function(){ downloadModalOpen=false; renderApp(); };
+    const backdrop = el('div', {class:'modal-backdrop', onclick:function(e){ if(e.target===backdrop) close(); }});
+    const modal = el('div', {class:'modal'});
+    modal.appendChild(el('h3', null, ['Download catalog']));
+    modal.appendChild(el('p', {class:'hint'}, ['Export as a CSV file (opens in Excel/Sheets). Leave the range blank to download everything in the selected category.']));
+
+    const catSel = el('select');
+    catSel.appendChild(el('option', {value:''}, ['All categories']));
+    CATEGORIES.forEach(function(c){ catSel.appendChild(el('option', {value:c}, [c])); });
+    modal.appendChild(el('label', null, ['Category']));
+    modal.appendChild(catSel);
+
+    const fromInp = el('input', {type:'text', placeholder:'e.g. DN1 (leave blank for start)'});
+    const toInp = el('input', {type:'text', placeholder:'e.g. DN500 (leave blank for end)'});
+    const g = el('div', {class:'grid-2'});
+    const c1 = el('div'); c1.appendChild(el('label',null,['From accession no.'])); c1.appendChild(fromInp);
+    const c2 = el('div'); c2.appendChild(el('label',null,['To accession no.'])); c2.appendChild(toInp);
+    g.appendChild(c1); g.appendChild(c2);
+    modal.appendChild(g);
+
+    const countHolder = el('p', {class:'hint'});
+    modal.appendChild(countHolder);
+
+    function matching(){
+      const cat = catSel.value, from = fromInp.value.trim(), to = toInp.value.trim();
+      return books.filter(function(b){
+        if(b.deleted) return false;
+        if(cat && b.category!==cat) return false;
+        if(from && compareAccession(b.accessionNo, from) < 0) return false;
+        if(to && compareAccession(b.accessionNo, to) > 0) return false;
+        return true;
+      });
+    }
+    function refreshCount(){
+      countHolder.textContent = matching().length + ' book(s) match this selection.';
+    }
+    catSel.addEventListener('change', refreshCount);
+    fromInp.addEventListener('input', refreshCount);
+    toInp.addEventListener('input', refreshCount);
+    refreshCount();
+
+    const actions = el('div', {class:'form-actions'});
+    actions.appendChild(el('button', {class:'btn-outline', onclick:close}, ['Cancel']));
+    actions.appendChild(el('button', {class:'btn-primary', style:'flex:1', onclick:function(){
+      const rows = matching().sort(function(a,b){ return compareAccession(a.accessionNo,b.accessionNo); });
+      const headers = ['Accession No','Title','Author','Category','Donor','Publisher','Year','Pages','ISBN','Copies Total','Copies Available'];
+      const lines = [headers.map(csvEscape).join(',')];
+      rows.forEach(function(b){
+        lines.push([
+          b.accessionNo, b.title, b.author, b.category, b.donor||'', b.publisher||'',
+          b.year||'', b.pages||'', b.isbn||'', b.copiesTotal||0, (b.copiesAvailable!=null?b.copiesAvailable:b.copiesTotal||0)
+        ].map(csvEscape).join(','));
+      });
+      const csv = '\uFEFF' + lines.join('\r\n'); // BOM so Excel opens Telugu text correctly
+      const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const from = fromInp.value.trim(), to = toInp.value.trim();
+      const rangeTag = (from||to) ? ('_'+(from||'start')+'-'+(to||'end')) : '';
+      const catTag = catSel.value ? ('_'+catSel.value.replace(/\s+/g,'')) : '';
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'catalog' + catTag + rangeTag + '.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      close();
+    }}, ['Download CSV']));
+    modal.appendChild(actions);
+
     backdrop.appendChild(modal);
     root.appendChild(backdrop);
   }
@@ -1556,7 +1966,7 @@
         const titleBlock = el('div');
         titleBlock.appendChild(el('div', {class:'book-title', style:'font-size:16px;'}, [book.title]));
         const categoryLabel = book.category + (book.alsoUGC && book.category!=='UGC' ? ' + UGC' : '');
-        titleBlock.appendChild(el('div', {class:'book-meta'}, [[book.author, categoryLabel, book.accessionNo ? ('Acc. '+book.accessionNo) : '', book.pages ? (book.pages+' pp') : ''].filter(Boolean).join(' · ')]));
+        titleBlock.appendChild(el('div', {class:'book-meta'}, [[book.author, categoryLabel, book.accessionNo ? ('Acc. '+book.accessionNo) : '', book.pages ? (book.pages+' pp') : '', book.donor ? ('Donor: '+book.donor) : ''].filter(Boolean).join(' · ')]));
         detailHead.appendChild(titleBlock);
 
         const avail = Number(book.copiesAvailable!=null?book.copiesAvailable:book.copiesTotal||0);
@@ -1628,6 +2038,7 @@
     modal.appendChild(el('p', {class:'hint'}, [avail + ' of ' + (book.copiesTotal||0) + ' copies available.']));
 
     const nameInp = el('input', {type:'text', placeholder:'Full name'});
+    attachTeluguTransliteration(nameInp);
     const mobileInp = el('input', {type:'tel', placeholder:'10-digit mobile number'});
     const dateInp = el('input', {type:'date', value: todayStr()});
 
@@ -1724,6 +2135,7 @@
     modal.appendChild(sameWrap);
 
     const returnerNameInp = el('input', {type:'text', placeholder:'Full name'});
+    attachTeluguTransliteration(returnerNameInp);
     const returnerMobileInp = el('input', {type:'tel', placeholder:'10-digit mobile number'});
     modal.appendChild(el('label', null, ['Returned by — name']));
     modal.appendChild(returnerNameInp);
@@ -1817,6 +2229,7 @@
     modal.appendChild(el('p', {class:'hint'}, ['Create a login for library staff. Admins can add/edit/remove books and manage logins. Read-only logins can search, view and print the catalog.']));
 
     const nameInp = el('input', {type:'text', placeholder:'Full name'});
+    attachTeluguTransliteration(nameInp, {defaultTelugu:false});
     const emailInp = el('input', {type:'email', placeholder:'staff@example.com'});
     const passInp = el('input', {type:'text', placeholder:'Temporary password (min 6 characters)'});
     const roleSel = el('select');
