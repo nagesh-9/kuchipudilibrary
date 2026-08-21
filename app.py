@@ -30,12 +30,14 @@ from flask import Flask, Response, request, send_from_directory
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 HTML_FILE = "skk-library.html"
+DICTIONARY_FILE = "te-dictionary.txt"
 
 # Fields sent to the public API — deliberately excludes anything internal
 # (deleted flag, importedFrom, createdBy, raw timestamps) that guests don't need.
 PUBLIC_FIELDS = [
     "title", "author", "category", "accessionNo",
     "isbn", "pages", "year", "publisher", "copiesTotal", "copiesAvailable",
+    "donor", "alsoUGC",
 ]
 
 # How long browsers may serve a cached response before re-checking. The
@@ -101,6 +103,16 @@ app = Flask(__name__)
 @app.route("/")
 def index():
     return send_from_directory(BASE_DIR, HTML_FILE)
+
+
+@app.route("/te-dictionary.txt")
+def te_dictionary():
+    # A real ~125k-word Telugu wordlist (LibreOffice's open-source spell-check
+    # dictionary), used client-side to rank English-typed-to-Telugu candidates
+    # by whether they're real words. Never changes, so cache it hard.
+    resp = send_from_directory(BASE_DIR, DICTIONARY_FILE, mimetype="text/plain")
+    resp.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+    return resp
 
 
 @app.route("/api/books")
